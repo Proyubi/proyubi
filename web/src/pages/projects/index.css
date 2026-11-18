@@ -398,7 +398,7 @@ a.pm-tbl-danger {
   color: #8c94a3;
   font-variant-numeric: tabular-nums;
 }
-.pm-filter-chip:hover:not(:disabled) {
+.pm-filter-chip:hover:not(:disabled):not(.is-on) {
   color: #2f6bff;
   border-color: #2f6bff;
 }
@@ -411,8 +411,13 @@ a.pm-tbl-danger {
   border-color: #2f6bff;
   color: #fff;
 }
+.pm-filter-chip.is-on:hover:not(:disabled) {
+  background: #2458d8;
+  border-color: #2458d8;
+  color: #fff;
+}
 .pm-filter-chip.is-on b {
-  color: rgba(255, 255, 255, 0.75);
+  color: #fff;
 }
 .pm-filter-chip:disabled {
   opacity: 0.45;
@@ -439,6 +444,10 @@ a.pm-tbl-danger {
   background: #ff4d4f;
   border-color: #ff4d4f;
   border-style: solid;
+}
+.pm-filter-chip.is-overdue.is-on:hover:not(:disabled) {
+  background: #d9363e;
+  border-color: #d9363e;
 }
 .pm-filter-chip.is-overdue.is-on .pm-filter-dot {
   background: #fff;
