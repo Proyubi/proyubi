@@ -1,0 +1,446 @@
+/* ===== 项目管理 — 左右两列（客户 / 版本） · 与甘特图同色板 ===== */
+/* 调色板（与 gantt.css 保持一致）:
+   标题 #1f2738 / 次要 #9aa3b2 / 主蓝 #2f6bff / 成功 #52c41a
+   卡片描边 #eef0f4 / 圆角 10px / 分隔线 #f0f2f5 */
+.pm-loading {
+  text-align: center;
+  margin-top: 120px;
+}
+
+/* 两列布局
+   高さは「行数」ではなく視口で決める：
+   - 左右は同じ grid 行に入るので、行高を確定させれば必ず底が揃う
+   - 表の行が 10 件でも 100 件でも外側の高さは変わらず、はみ出た分は表の中でスクロール
+   引く 116px の内訳：内容区の上 padding 32 + PageContainer ヘッダー約 52
+   + 内容区の下 padding 32（app.tsx が headerRender:false なのでトップバーは無い）。 */
+.pm-body {
+  /* 低い画面で潰さない下限：ツールバー(56)+表头(48)+5 行(240)+ページャ(60)+余白 */
+  --pm-panel-min-h: 480px;
+  display: grid;
+  grid-template-columns: 320px 1fr;
+  gap: 16px;
+  align-items: stretch;
+  height: calc(100vh - 116px);
+  min-height: var(--pm-panel-min-h);
+}
+/* 左列折叠：只留头像图标一列，横向空间让给表格 */
+.pm-body.is-collapsed {
+  grid-template-columns: 64px 1fr;
+}
+/* 中等宽度：左列先瘦身，避免把 プロジェクト名 / 説明 挤没 */
+@media (max-width: 1400px) {
+  .pm-body {
+    grid-template-columns: 260px 1fr;
+  }
+}
+
+/* 左：客户 / 产品 —— 与右侧面板同款描边/圆角
+   wrap 是 grid 项（被拉伸到行高），Card 绝对定位填满它：
+   绝对定位的卡片不参与行高计算，所以左卡永远等于右侧表格的高度 */
+.pm-left-wrap {
+  position: relative;
+  min-width: 0;
+}
+.pm-left.ant-card {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  border: 1px solid #eef0f4;
+  border-radius: 10px;
+  box-shadow: none;
+}
+.pm-left .ant-card-head {
+  border-bottom: 1px solid #f0f2f5;
+  min-height: 44px;
+  flex: 0 0 auto;
+}
+.pm-left .ant-card-head-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: #1f2738;
+}
+.pm-left .ant-card-body {
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+.pm-left-actions {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+}
+/* flex-basis:0 —— 列表本身不参与卡片的固有高度计算，
+   卡片高度只由 grid 行（= 右侧表格）决定，超出部分内部滚动 */
+.pm-cust-list {
+  flex: 1 1 0;
+  min-height: 120px;
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+.pm-cust {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 10px;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background 0.18s;
+}
+.pm-cust:hover {
+  background: rgba(47, 107, 255, 0.05);
+}
+.pm-cust.is-active {
+  background: rgba(47, 107, 255, 0.08);
+}
+.pm-cust-info {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+.pm-cust-name {
+  font-weight: 400;
+  color: #1f2738;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.pm-cust.is-active .pm-cust-name {
+  color: #2f6bff;
+}
+.pm-cust-sub {
+  font-size: 12px;
+  color: #9aa3b2;
+}
+
+/* 右：版本表格 —— grid 行の高さいっぱいに伸ばし、内側（表の body）でスクロールさせる。
+   min-height:0 を各段に入れないと flex 子要素が内容分の高さを主張して縮まない。 */
+.pm-right {
+  min-width: 0;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+.pm-right > .ant-pro-table,
+.pm-right > .ant-pro-table > .ant-pro-card,
+.pm-right > .ant-pro-table > .ant-pro-card > .ant-pro-card-body,
+.pm-right .ant-table-wrapper,
+.pm-right .ant-table-wrapper > .ant-spin,
+.pm-right .ant-table-wrapper > .ant-spin > .ant-spin-container,
+.pm-right .ant-spin-container > .ant-table,
+.pm-right .ant-table > .ant-table-container {
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+/* ツールバー / 表头 / ページャは自然高、余りは全部 body に渡す */
+.pm-right .ant-pro-table-list-toolbar,
+.pm-right .ant-table-header,
+.pm-right .ant-table-pagination.ant-pagination {
+  flex: 0 0 auto;
+}
+/* scroll.y の inline max-height は「行が少ないと縮む」ので打ち消し、
+   高さは grid 行から降ってくる残りぶんに固定する */
+.pm-right .ant-table-body {
+  flex: 1 1 auto;
+  min-height: 0;
+  max-height: none !important;
+  overflow-y: auto !important;
+}
+/* 年度スケジュール側も同じく高さいっぱい＋内側スクロール */
+.pm-right .an-wrap {
+  flex: 1 1 auto;
+  min-height: 0;
+}
+.pm-right .an-scroll {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow: auto;
+}
+
+/* ProTable 卡片：与左卡同款描边 / 圆角 */
+.pm-right .ant-pro-card,
+.pm-right .ant-pro-table-search {
+  border-radius: 10px;
+}
+.pm-right .ant-pro-table-search.ant-pro-card {
+  border: 1px solid #eef0f4;
+  box-shadow: none;
+  margin-bottom: 16px;
+}
+.pm-right .ant-pro-table-list-toolbar-container {
+  padding-block: 12px;
+}
+
+/* 表格内文案样式 */
+.pm-tbl-title {
+  font-size: 16px;
+  font-weight: 700;
+  color: #1f2738;
+}
+.pm-tbl-name {
+  font-weight: 400;
+}
+.pm-tbl-muted {
+  color: #c2c8d2;
+}
+.pm-tbl-date {
+  color: #5b6472;
+  font-size: 13px;
+}
+.pm-tbl-overdue {
+  color: #ff4d4f;
+  font-weight: 600;
+  margin-left: 2px;
+}
+/* 継続中（運用型の終了日なし）：期限ではないので警告色にしない */
+.pm-tbl-ongoing {
+  color: #2f6bff;
+  font-weight: 600;
+}
+/* 運用型の「進捗」セル：進捗バーの代わりに今月の消化件数＋滞留件数 */
+.pm-tbl-ops {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.pm-tbl-ops-month {
+  color: #5b6472;
+  font-size: 13px;
+  white-space: nowrap;
+}
+.pm-tbl-ops-open {
+  margin-inline-end: 0;
+}
+/* 運用型 + 月次工数枠あり：消化メーター + 件数の 2 段組み */
+.pm-tbl-quota {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 176px;
+}
+.pm-tbl-quota-head {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.pm-tbl-quota-num {
+  font-size: 13px;
+  color: #2f3a4a;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+.pm-tbl-quota-num.is-over {
+  color: #d46b08;
+  font-weight: 600;
+}
+.pm-tbl-quota-rail {
+  height: 5px;
+  border-radius: 99px;
+  background: #f0f2f5;
+  overflow: hidden;
+}
+.pm-tbl-quota-fill {
+  display: block;
+  height: 100%;
+  border-radius: 99px;
+  background: #2f6bff;
+}
+/* 実績未入力で予定を代わりに出している間は塗りを弱める（確定値ではない） */
+.pm-tbl-quota-fill.is-planned {
+  background: #a8bdf5;
+}
+.pm-tbl-quota-fill.is-over {
+  background: #fa8c16;
+}
+.pm-tbl-quota-sub {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 12px;
+  color: #8c94a3;
+  white-space: nowrap;
+}
+.pm-tbl-ops-sep {
+  color: #d5dae2;
+}
+
+/* 種別セレクトの選択肢に添える一行説明 */
+.pm-opt-desc {
+  color: #8c94a3;
+  font-size: 12px;
+  line-height: 1.4;
+}
+
+.pm-tbl-danger.ant-typography,
+a.pm-tbl-danger {
+  color: #ff4d4f;
+}
+.pm-tbl-act {
+  font-size: 19px;
+  display: inline-flex;
+  align-items: center;
+  padding: 0 6px;
+}
+
+/* ===== 左列折叠态：只显示头像图标 ===== */
+.pm-left.is-collapsed .ant-card-head {
+  padding-inline: 8px;
+}
+.pm-left.is-collapsed .ant-card-head-wrapper {
+  justify-content: center;
+}
+.pm-left.is-collapsed .ant-card-extra {
+  margin-inline-start: 0;
+}
+.pm-left.is-collapsed .ant-card-body {
+  padding: 8px 6px !important;
+}
+.pm-left.is-collapsed .pm-cust {
+  justify-content: center;
+  padding: 6px 0;
+  gap: 0;
+}
+/* 折叠时名称/件数改由 Tooltip + Badge 呈现 */
+.pm-left.is-collapsed .pm-cust-info,
+.pm-left.is-collapsed .pm-cust .ant-tag {
+  display: none;
+}
+
+/* 窄屏：上下堆叠 */
+@media (max-width: 880px) {
+  .pm-body,
+  .pm-body.is-collapsed {
+    grid-template-columns: 1fr;
+    /* 縦積みでは視口固定をやめてページ側でスクロールさせる */
+    height: auto;
+    min-height: 0;
+  }
+  /* 堆叠时不再需要"跟右侧等高"，恢复普通文档流 */
+  .pm-left-wrap {
+    position: static;
+  }
+  .pm-left.ant-card {
+    position: static;
+  }
+  .pm-cust-list {
+    flex: 0 0 auto;
+    max-height: 320px;
+  }
+  .pm-left.is-collapsed .pm-cust-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+    max-height: 160px;
+  }
+  /* 表の縦スクロールも解除（画面ごとスクロールするので二重スクロールにしない） */
+  .pm-right .ant-table-body {
+    max-height: 420px !important;
+  }
+}
+
+/* 絞り込み行（ツールバー 2 行目 = カードの中）。
+   カードの外に出すと「全体検索」に見えてしまうので、必ず表のすぐ上に置く。 */
+/* extra-line は container と違って paddingInline を持たないので、
+   タイトル行と左端が揃うよう自分で合わせる（container は paddingXS = 8px） */
+.pm-right .ant-pro-table-list-toolbar-extra-line {
+  padding-inline: 8px;
+  margin-block-end: 12px;
+}
+.pm-filter {
+  display: flex;
+  flex: 1;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  width: 100%;
+}
+.pm-filter-chips {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+.pm-filter-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 26px;
+  padding: 0 11px;
+  border: 1px solid #d9d9d9;
+  border-radius: 13px;
+  background: #fff;
+  color: #1f2738;
+  font-size: 13px;
+  line-height: 1;
+  cursor: pointer;
+  transition: color 0.15s, border-color 0.15s, background-color 0.15s;
+}
+.pm-filter-chip b {
+  font-weight: 500;
+  font-size: 12px;
+  color: #8c94a3;
+  font-variant-numeric: tabular-nums;
+}
+.pm-filter-chip:hover:not(:disabled) {
+  color: #2f6bff;
+  border-color: #2f6bff;
+}
+.pm-filter-chip:focus-visible {
+  outline: 2px solid #2f6bff;
+  outline-offset: 2px;
+}
+.pm-filter-chip.is-on {
+  background: #2f6bff;
+  border-color: #2f6bff;
+  color: #fff;
+}
+.pm-filter-chip.is-on b {
+  color: rgba(255, 255, 255, 0.75);
+}
+.pm-filter-chip:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+/* 期限超過は status ではなく期間からの導出値。状態チップと地続きに並べると
+   「状態のひとつ」に見えるので、区切り + 破線枠で別物だと分かるようにする */
+.pm-filter-sep {
+  width: 1px;
+  height: 16px;
+  background: #e5e8ee;
+  margin: 0 3px;
+}
+.pm-filter-chip.is-overdue {
+  border-style: dashed;
+}
+.pm-filter-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #ff4d4f;
+}
+.pm-filter-chip.is-overdue.is-on {
+  background: #ff4d4f;
+  border-color: #ff4d4f;
+  border-style: solid;
+}
+.pm-filter-chip.is-overdue.is-on .pm-filter-dot {
+  background: #fff;
+}
+.pm-filter-kw {
+  width: 200px;
+  margin-inline-start: auto;
+}
+/* 空振りした語を ⌘K に引き継ぐボタン */
+.pm-filter-bridge {
+  margin-block-start: 8px;
+}
+
+@media (max-width: 880px) {
+  .pm-filter-kw {
+    width: 100%;
+    margin-inline-start: 0;
+  }
+}

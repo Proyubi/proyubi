@@ -1,0 +1,17 @@
+/* ===== 客户 / 产品 — antd 原生 · 与项目页一致的清爽风格 ===== */
+.cust-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 12px;
+  flex-wrap: wrap;
+}
+.cust-loading {
+  text-align: center;
+  padding: 80px 0;
+}
+
+.cust-muted {
+  color: rgba(0, 0, 0, 0.25);
+}

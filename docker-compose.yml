@@ -1,0 +1,74 @@
+# Proyubi 自托管：PostgreSQL + Redis + server + web (+ mcp)
+#   cp .env.example .env   # 填写密码和密钥
+#   docker compose up -d --build
+# 首次启动时 PostgreSQL 会执行 server/schema/ 下的初始化 SQL（只在数据目录为空时执行一次）。
+services:
+  postgres:
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-pullcord}
+      POSTGRES_USER: ${POSTGRES_USER:-pullcord}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env}
+    volumes:
+      - pg-data:/var/lib/postgresql/data
+      - ./server/schema:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    restart: unless-stopped
+
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+
+  server:
+    build: ./server
+    env_file: .env
+    environment:
+      SPRING_PROFILES_ACTIVE: prod
+      SERVER_PORT: 38082
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/${POSTGRES_DB:-pullcord}
+      SPRING_DATASOURCE_USERNAME: ${POSTGRES_USER:-pullcord}
+      SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD}
+      SPRING_DATA_REDIS_HOST: redis
+      SPRING_DATA_REDIS_PORT: 6379
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_started
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fsS http://localhost:38082/actuator/health || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 90s
+    restart: unless-stopped
+
+  web:
+    build: ./web
+    ports:
+      - "${WEB_PORT:-8080}:80"
+    volumes:
+      - ./deploy/selfhost/nginx.conf:/etc/nginx/conf.d/default.conf:ro
+    depends_on:
+      - server
+    restart: unless-stopped
+
+  # MCP（让 Claude / ChatGPT 读写 Proyubi）。不需要就 `docker compose up -d postgres redis server web`
+  mcp:
+    build: ./mcp
+    environment:
+      PM_API_BASE_URL: http://server:38082
+      PM_INTERNAL_API_KEY: ${PM_INTERNAL_API_KEY:?set PM_INTERNAL_API_KEY in .env}
+      PORT: 8080
+    ports:
+      - "${MCP_PORT:-3110}:8080"
+    depends_on:
+      - server
+    restart: unless-stopped
+
+volumes:
+  pg-data:

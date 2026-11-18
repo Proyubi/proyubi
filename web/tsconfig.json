@@ -1,0 +1,26 @@
+{
+  "compilerOptions": {
+    "baseUrl": "./",
+    "target": "esnext",
+    "moduleResolution": "node",
+    "jsx": "react-jsx",
+    "esModuleInterop": true,
+    "experimentalDecorators": true,
+    "strict": true,
+    "forceConsistentCasingInFileNames": true,
+    "noImplicitReturns": true,
+    "declaration": true,
+    "skipLibCheck": true,
+    "resolveJsonModule": true,
+    "paths": {
+      "@/*": ["./src/*"],
+      "@@/*": ["./src/.umi/*"],
+      "@@test/*": ["./src/.umi-test/*"],
+      "@open-pencil/core/icons": [
+        "./node_modules/@open-pencil/core/dist/icons/index.d.ts"
+      ]
+    }
+  },
+  "include": ["./**/*.d.ts", "./**/*.ts", "./**/*.tsx"],
+  "exclude": ["node_modules", "pen-viewer", "public"]
+}

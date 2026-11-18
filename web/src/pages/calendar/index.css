@@ -1,0 +1,213 @@
+.cal-loading {
+  text-align: center;
+  padding: 120px 0;
+}
+
+/* 全屏容器：全屏时白底铺满、格子不限高，所有条全铺开（不滚动） */
+.cal-fs-wrap:fullscreen,
+.cal-fs-wrap:-webkit-full-screen {
+  background: #fff;
+  padding: 16px 24px;
+  overflow: auto;
+}
+.cal-fs-wrap:fullscreen .cal-fullcell,
+.cal-fs-wrap:-webkit-full-screen .cal-fullcell {
+  min-height: 200px;
+}
+.cal-fs-wrap:fullscreen .cal-cell,
+.cal-fs-wrap:-webkit-full-screen .cal-cell {
+  max-height: none;
+}
+
+/* 头部：翻月箭头 + 年月 + 今天 + 内容过滤 */
+.cal-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 0 12px;
+}
+.cal-header-label {
+  min-width: 96px;
+  text-align: center;
+  font-size: 16px;
+  font-weight: 600;
+}
+/* 过滤段控件推到最右 */
+.cal-header-filter {
+  margin-left: auto;
+}
+
+/* 自绘整格：日期数字 + 任务/事件内容 */
+.cal-fullcell {
+  margin: 0 4px;
+  min-height: 130px;
+  padding: 4px 8px 0;
+  border-top: 2px solid rgba(5, 5, 5, 0.06);
+  cursor: pointer;
+  transition: background 0.2s;
+}
+.cal-fullcell:hover {
+  background: rgba(0, 0, 0, 0.02);
+}
+.cal-fullcell.is-today {
+  border-top-color: #1677ff;
+  background: #f0f5ff;
+}
+.cal-fullcell.is-holiday {
+  background: #fff5f5;
+}
+.cal-fullcell.is-holiday.is-today {
+  background: #f0f5ff;
+}
+.cal-date-row {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  line-height: 22px;
+  margin-bottom: 2px;
+}
+.cal-date {
+  font-size: 13px;
+  font-weight: 600;
+  color: rgba(0, 0, 0, 0.85);
+}
+/* 周日 / 红日子=红，周六=蓝（日本日历惯例） */
+.cal-fullcell.is-sun .cal-date {
+  color: #cf1322;
+}
+.cal-fullcell.is-sat .cal-date {
+  color: #1677ff;
+}
+/* 非本月日期弱化（覆盖周末/红日子色） */
+.cal-fullcell.is-outmonth {
+  background: #fafafa;
+}
+.cal-fullcell.is-outmonth .cal-date {
+  color: rgba(0, 0, 0, 0.25);
+}
+/* 红日子名（祝日名），过长省略 */
+.cal-holiday-name {
+  flex: 1 1 auto;
+  min-width: 0;
+  font-size: 11px;
+  color: #cf1322;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* 卡片化：与 overview / projects 等页一致，外框带边框 */
+.cal-card {
+  margin-block-start: 8px;
+}
+/* 全屏时卡片去边框/圆角，铺满白底容器 */
+.cal-fs-wrap:fullscreen .cal-card,
+.cal-fs-wrap:-webkit-full-screen .cal-card {
+  border: none;
+  margin-block-start: 0;
+}
+
+.cal-body {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+/* 区间内无任务时的顶部提示 */
+.cal-empty-hint {
+  padding: 6px 2px;
+  font-size: 13px;
+  color: rgba(0, 0, 0, 0.45);
+}
+
+/* 日期格内的任务条容器 */
+.cal-cell {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  /* 高度受限时纵向滚动，避免撑破日历格；约可显示 5 条 */
+  max-height: 104px;
+  overflow-y: auto;
+}
+
+/* 单条任务（可点击跳 Gantt） */
+.cal-item {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 1px 4px;
+  border-radius: 4px;
+  font-size: 12px;
+  line-height: 1.4;
+  cursor: pointer;
+  background: #f0f5ff;
+  border-left: 3px solid #2f6bff;
+  transition: background 0.15s;
+}
+.cal-item:hover {
+  background: #e6f0ff;
+}
+/* 命中风险时左条改用风险色（与徽标同源） */
+.cal-item.is-risk {
+  background: #fff7e6;
+  border-left-color: #faad14;
+}
+.cal-item.is-overdue {
+  background: #fff1f0;
+  border-left-color: #cf1322;
+}
+
+.cal-item-name {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: rgba(0, 0, 0, 0.85);
+}
+/* 已完成任务弱化（划掉感） */
+.cal-item.is-done .cal-item-name {
+  color: rgba(0, 0, 0, 0.35);
+  text-decoration: line-through;
+}
+
+.cal-item-badge {
+  flex: 0 0 auto;
+}
+
+/* 整格容器可点（空白处=新建当天事件）：撑满格子，确保空白也响应点击 */
+.cal-cell {
+  min-height: 90px;
+  cursor: pointer;
+}
+
+/* 单条事件（可点击编辑）：与 task 不同色系，用类型色徽标 */
+.cal-event {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 1px 4px;
+  border-radius: 4px;
+  font-size: 12px;
+  line-height: 1.4;
+  cursor: pointer;
+  background: #fafafa;
+  border-left: 3px solid #d9d9d9;
+  transition: background 0.15s;
+}
+.cal-event:hover {
+  background: #f0f0f0;
+}
+
+/* 事件类型图例 */
+.cal-legend {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+  flex-wrap: wrap;
+}
+.cal-legend-title {
+  font-size: 13px;
+  color: rgba(0, 0, 0, 0.65);
+}

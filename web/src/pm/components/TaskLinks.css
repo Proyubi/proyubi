@@ -1,0 +1,89 @@
+/* 任务关联链接区（弹窗右栏「設計」页签，撑满高度） */
+.pm-links {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
+}
+
+/* 添加区（钉在顶部） */
+.pm-links-composer {
+  flex: none;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.pm-links-composer-actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.pm-links-hint {
+  font-size: 12px;
+  color: #8c8c8c;
+  line-height: 1.4;
+}
+
+.pm-links-loading,
+.pm-links-empty {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* 链接列表（滚动） */
+.pm-links-list {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.pm-link-item {
+  border: 1px solid #f0f0f0;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.pm-link-head {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 4px 6px 10px;
+  background: #fafafa;
+}
+
+.pm-link-ico {
+  color: #8c8c8c;
+  flex: none;
+}
+
+.pm-link-label {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 13px;
+  font-weight: 500;
+}
+
+/* Figma 内联预览：在 420px 右栏里给一块紧凑画布，点右上角↗在 Figma 打开看全图 */
+.pm-link-figma {
+  display: block;
+  width: 100%;
+  height: 240px;
+  border: 0;
+  border-top: 1px solid #f0f0f0;
+  background: #f5f5f5;
+}

@@ -1,0 +1,86 @@
+spring:
+  # Banner 配置
+  banner:
+    location: classpath:banner.txt  # 自定义 banner 文件位置
+    # mode: console  # console: 输出到控制台, off: 关闭 banner, log: 输出到日志
+
+  datasource:
+    # 本地开发库（docker compose 起的 PostgreSQL，见 README）。连远程库时在 .env.dev 里覆盖 SPRING_DATASOURCE_*
+    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://127.0.0.1:5432/pullcord}
+    driver-class-name: org.postgresql.Driver
+    username: ${SPRING_DATASOURCE_USERNAME:pullcord}
+    password: ${SPRING_DATASOURCE_PASSWORD:pullcord}
+    hikari:
+      # 禁用 PostgreSQL 服务器端 prepared statement，避免 "prepared statement already exists" 错误
+      # 这在使用连接池时可能会发生，因为连接被重用但 prepared statement 没有被正确清理
+      # prepareThreshold=0 参数会通过 DataSourceConfig BeanPostProcessor 自动添加到连接 URL 中
+      connection-init-sql: "SET TIME ZONE 'UTC'"
+      # 连接池配置
+      maximum-pool-size: 10  # 最大连接数（根据实际需求调整）
+      minimum-idle: 5  # 最小空闲连接数
+      connection-timeout: 30000  # 连接超时时间（30秒）
+      max-lifetime: 1800000  # 连接最大生命周期（30分钟，PostgreSQL 推荐值）
+      idle-timeout: 600000  # 空闲连接超时时间（10分钟）
+      leak-detection-threshold: 300000  # 连接泄漏检测阈值（5分钟，开发环境启用，SQL 初始化脚本可能需要较长时间）
+      # 连接池名称（用于日志识别）
+      pool-name: ProyubiHikariPool
+
+  data:
+    redis:
+      host: 127.0.0.1
+      port: 6379
+
+mybatis-flex:
+  mapper-locations: classpath*:/mapper/**/*.xml
+  # 类型别名按「简单类名」注册，不能整树扫描 ai.proyubi（同名实体/TableDef 会冲突）
+  type-aliases-package: ai.proyubi.platform,ai.proyubi.account,ai.proyubi.pm
+  # 自定义 TypeHandler 包扫描（SmartLocalDateTimeTypeHandler 解决 timestamptz → LocalDateTime）
+  type-handlers-package: ai.proyubi.common.mybatisflex.typehandler
+  # 注意：禁用 banner 需要通过代码配置，见 MybatisFlexConfig.java
+  configuration:
+    # 将 SQL 结果列的 snake_case（如 display_name）自动映射到 Java Bean 的 camelCase 属性（如 displayName）
+    map-underscore-to-camel-case: true
+
+# 日志配置
+logging:
+  level:
+    # MyBatis-Flex Mapper 接口日志（只输出 SQL 语句）
+    ai.proyubi.platform.mapper: DEBUG
+    ai.proyubi.account.mapper: DEBUG
+    ai.proyubi.common.mybatisflex.mapper: DEBUG
+    ai.proyubi.settings.mapper: DEBUG
+    # MyBatis 核心日志（设置为 INFO，避免打印启动时的初始化日志）
+    org.apache.ibatis: INFO
+    # MyBatis-Flex 日志（设置为 INFO，避免打印启动时的初始化日志）
+    com.mybatisflex: INFO
+    # JDBC 日志（设置为 INFO，避免打印连接、语句等详细信息）
+    java.sql: INFO
+    java.sql.Connection: INFO
+    java.sql.Statement: INFO
+    java.sql.PreparedStatement: INFO
+    java.sql.ResultSet: INFO
+    # Controller 日志（设置为 DEBUG，方便排查问题）
+    ai.proyubi.platform.controller: DEBUG
+    ai.proyubi.account.controller: DEBUG
+    # Service 日志（设置为 DEBUG，方便排查问题）
+    ai.proyubi.platform.service: DEBUG
+    ai.proyubi.account.service: DEBUG
+    # 全局异常处理器日志
+    ai.proyubi.common.web.exception: DEBUG
+    # 根日志级别
+    root: INFO
+
+# Supabase Storage（可选；默认存储走 MinIO/S3，见 platform_oss_config）
+supabase:
+  url: ${SUPABASE_URL:}
+  service-role-key: ${SUPABASE_SERVICE_ROLE_KEY:}
+  storage:
+    bucket: ${SUPABASE_STORAGE_BUCKET:pullcord}
+
+# 平台超级管理员账号
+# key 不能和占位符同名（否则 Spring 自引用解析，抛 Circular placeholder reference）
+proyubi:
+  ops:
+    admin:
+      username: ${OPS_ADMIN_USERNAME:admin}
+      password: ${OPS_ADMIN_PASSWORD:admin123}

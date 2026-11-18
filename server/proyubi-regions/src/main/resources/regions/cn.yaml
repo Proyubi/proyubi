@@ -1,0 +1,16 @@
+# 中国区域配置
+auth:
+  wechat: enabled
+  email: enabled
+  # Sign in with Apple：CN 区 iOS App 提供微信登录时同样受审核指南 4.8 约束
+  apple: enabled
+
+account_model:
+  workspace: enabled
+  default: workspace
+
+capabilities:
+  multi_member: enabled
+  collaboration: enabled
+  export: enabled_with_limit
+

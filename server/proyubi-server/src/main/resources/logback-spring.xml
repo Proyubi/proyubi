@@ -1,0 +1,73 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<configuration>
+    <!-- 控制台输出 -->
+    <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
+        <encoder>
+            <pattern>%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger{50} - %msg%n</pattern>
+            <charset>UTF-8</charset>
+        </encoder>
+    </appender>
+
+    <!-- MyBatis SQL 日志格式化输出 -->
+    <appender name="SQL_CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
+        <encoder>
+            <pattern>%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %highlight(%-5level) %cyan(%logger{50}) - %msg%n</pattern>
+            <charset>UTF-8</charset>
+        </encoder>
+    </appender>
+
+    <!-- MyBatis Mapper 接口日志（只输出 SQL 语句） -->
+    <logger name="ai.proyubi.platform.mapper" level="DEBUG" additivity="false">
+        <appender-ref ref="SQL_CONSOLE"/>
+    </logger>
+    <logger name="ai.proyubi.account.mapper" level="DEBUG" additivity="false">
+        <appender-ref ref="SQL_CONSOLE"/>
+    </logger>
+    <logger name="ai.proyubi.common.mybatisflex.mapper" level="DEBUG" additivity="false">
+        <appender-ref ref="SQL_CONSOLE"/>
+    </logger>
+    <logger name="ai.proyubi.settings.mapper" level="DEBUG" additivity="false">
+        <appender-ref ref="SQL_CONSOLE"/>
+    </logger>
+
+    <!-- MyBatis 核心日志（设置为 INFO，避免打印启动时的初始化日志） -->
+    <logger name="org.apache.ibatis" level="INFO"/>
+
+    <!-- MyBatis-Flex 日志（设置为 INFO，避免打印启动时的初始化日志） -->
+    <logger name="com.mybatisflex" level="INFO"/>
+
+    <!-- JDBC 日志（设置为 INFO，避免打印连接、语句等详细信息） -->
+    <logger name="java.sql" level="INFO"/>
+    <logger name="java.sql.Connection" level="INFO"/>
+    <logger name="java.sql.Statement" level="INFO"/>
+    <logger name="java.sql.PreparedStatement" level="INFO"/>
+    <logger name="java.sql.ResultSet" level="INFO"/>
+
+    <!-- 根日志配置 -->
+    <root level="INFO">
+        <appender-ref ref="CONSOLE"/>
+    </root>
+
+    <!-- 开发环境配置 -->
+    <springProfile name="dev">
+        <root level="INFO">
+            <appender-ref ref="CONSOLE"/>
+        </root>
+    </springProfile>
+
+    <!-- 生产环境配置 -->
+    <springProfile name="prod">
+        <root level="INFO">
+            <appender-ref ref="CONSOLE"/>
+        </root>
+        <!-- 生产环境关闭详细的 SQL 日志 -->
+        <logger name="ai.proyubi.platform.mapper" level="INFO"/>
+        <logger name="ai.proyubi.account.mapper" level="INFO"/>
+        <logger name="ai.proyubi.common.mybatisflex.mapper" level="INFO"/>
+        <logger name="ai.proyubi.settings.mapper" level="INFO"/>
+        <logger name="org.apache.ibatis" level="INFO"/>
+        <logger name="com.mybatisflex" level="INFO"/>
+        <logger name="java.sql" level="INFO"/>
+    </springProfile>
+</configuration>
+

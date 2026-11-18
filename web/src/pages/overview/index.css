@@ -1,0 +1,481 @@
+.ov-loading {
+  text-align: center;
+  padding: 120px 0;
+}
+
+/* ===== 共通：ページ骨格（全社 / マイ） ===== */
+.ov-page,
+.ov-my {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+/* KPI 帯（見出しなし・1 行） */
+.ov-kpis {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
+}
+.ov-kpi {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 12px 18px;
+  background: #fff;
+  border-radius: 8px;
+}
+.ov-kpi-label {
+  font-size: 13px;
+  color: rgba(0, 0, 0, 0.55);
+}
+.ov-kpi-note {
+  margin-left: 6px;
+  font-size: 11px;
+  color: #cf1322;
+}
+.ov-kpi-val {
+  font-size: 26px;
+  font-weight: 700;
+  line-height: 1.1;
+  color: rgba(0, 0, 0, 0.85);
+}
+.ov-kpi-val.ov-kpi-danger {
+  color: #cf1322;
+}
+.ov-kpi-val.ov-kpi-primary {
+  color: #1677ff;
+}
+.ov-kpi-sep {
+  font-size: 18px;
+  font-weight: 600;
+  color: rgba(0, 0, 0, 0.35);
+}
+
+/* 2×2：左 70%・右 30%。行の高さを左右で共有するので上下の境目が揃う。
+   全社：左はリスク一覧が 2 行ぶち抜き。マイ：左上マイタスク／左下マイバグ。
+   高さはビューポート基準、中身は各パネル内スクロール */
+.ov-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 7fr) minmax(0, 3fr);
+  grid-template-rows: minmax(0, 1.6fr) minmax(0, 1fr);
+  gap: 12px;
+  height: calc(100vh - 210px);
+  min-height: 600px;
+}
+.ov-panel {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  overflow: hidden;
+  background: #fff;
+  border-radius: 8px;
+}
+.ov-panel-head {
+  display: flex;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  height: 46px;
+  padding: 0 16px;
+  border-bottom: 1px solid #f0f0f0;
+}
+.ov-panel-head h2 {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 600;
+}
+.ov-panel-count {
+  margin-left: 8px;
+  font-size: 13px;
+  font-weight: 400;
+  color: rgba(0, 0, 0, 0.45);
+}
+.ov-panel-body {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+}
+.ov-panel-body > .ant-empty {
+  margin: 32px 0;
+}
+
+/* 全社：遅延タスク KPI はクリックでリスク一覧を絞り込み */
+.ov-kpi-link {
+  width: 100%;
+  font: inherit;
+  text-align: left;
+  border: none;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.ov-kpi-link:hover,
+.ov-kpi-link.is-active {
+  background: #fff1f0;
+}
+.ov-kpi-link.is-active {
+  box-shadow: inset 0 0 0 1px #ffccc7;
+}
+.ov-panel-span {
+  grid-row: 1 / span 2;
+}
+
+/* 全社：リスク一覧 */
+.ov-risk .ant-table-wrapper .ant-table-pagination {
+  margin: 12px 16px;
+}
+.ov-risk .ant-table-thead > tr > th:first-child,
+.ov-risk .ant-table-tbody > tr > td:first-child {
+  padding-left: 16px;
+}
+.ov-badges {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 2px;
+}
+.ov-proj,
+.ov-due {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  line-height: 1.35;
+  min-width: 0;
+}
+.ov-ver,
+.ov-cust {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.ov-cust {
+  font-size: 12px;
+  color: rgba(0, 0, 0, 0.45);
+}
+.ov-due > span + span {
+  font-size: 12px;
+}
+.ov-muted {
+  color: rgba(0, 0, 0, 0.45);
+  font-size: 12px;
+}
+.ov-overdue {
+  color: #cf1322;
+  font-weight: 600;
+}
+.ov-duesoon {
+  color: #d46b08;
+}
+
+/* 案件ヘルス（全社 / マイ 共通） */
+.ov-hrow {
+  padding: 8px 16px;
+  border-bottom: 1px solid #f5f5f5;
+  cursor: pointer;
+}
+.ov-hrow:hover {
+  background: #fafafa;
+}
+.ov-hrow.is-overdue {
+  background: #fff1f0;
+}
+.ov-hrow-main {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 2px;
+}
+.ov-hname {
+  font-weight: 500;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.ov-hrow .ant-progress {
+  margin: 0;
+}
+
+/* 全社：担当者別タスク（横棒） */
+.ov-bars {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 12px 16px;
+}
+.ov-bar {
+  display: grid;
+  grid-template-columns: 72px minmax(0, 1fr) 36px;
+  column-gap: 8px;
+  align-items: center;
+  font-size: 12px;
+}
+.ov-bar-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: rgba(0, 0, 0, 0.7);
+}
+.ov-bar-track {
+  height: 8px;
+  overflow: hidden;
+  border-radius: 4px;
+  background: #f5f6f8;
+}
+.ov-bar-track > span {
+  display: block;
+  height: 8px;
+  border-radius: 4px;
+}
+.ov-bar-val {
+  text-align: right;
+  color: rgba(0, 0, 0, 0.6);
+  font-variant-numeric: tabular-nums;
+}
+
+/* マイタスク：期日グループ */
+.ov-grp-head {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  height: 32px;
+  padding: 0 16px;
+  font-size: 12px;
+  font-weight: 600;
+  background: #fafafa;
+  border-bottom: 1px solid #f0f0f0;
+  --ov-grp-c: rgba(0, 0, 0, 0.45);
+}
+.ov-grp-overdue .ov-grp-head {
+  --ov-grp-c: #cf1322;
+}
+.ov-grp-today .ov-grp-head {
+  --ov-grp-c: #d46b08;
+}
+.ov-grp-week .ov-grp-head {
+  --ov-grp-c: #1677ff;
+}
+.ov-grp-head > i {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--ov-grp-c);
+}
+.ov-grp-label {
+  color: var(--ov-grp-c);
+}
+.ov-grp-count {
+  font-weight: 400;
+  color: rgba(0, 0, 0, 0.45);
+}
+.ov-grp-more {
+  margin-left: auto;
+  padding: 0;
+  font: inherit;
+  font-weight: 400;
+  color: #1677ff;
+  background: none;
+  border: none;
+  cursor: pointer;
+}
+.ov-trow {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 110px 130px 120px;
+  column-gap: 16px;
+  align-items: center;
+  min-height: 44px;
+  padding: 0 16px;
+  border-bottom: 1px solid #f5f5f5;
+  cursor: pointer;
+}
+.ov-trow:hover {
+  background: #fafafa;
+}
+.ov-trow-main {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  min-width: 0;
+}
+.ov-trow-name,
+.ov-trow-proj {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.ov-trow-name {
+  flex: 0 1 auto;
+  min-width: 0;
+}
+.ov-trow-proj {
+  flex: 0 2 auto;
+  min-width: 60px;
+  font-size: 12px;
+  color: rgba(0, 0, 0, 0.45);
+}
+.ov-trow-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 2px;
+}
+.ov-trow-due {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  font-size: 13px;
+  color: rgba(0, 0, 0, 0.7);
+  white-space: nowrap;
+}
+.ov-trow-due > span + span {
+  font-size: 12px;
+}
+.ov-trow-progress.ant-progress {
+  margin: 0;
+}
+
+/* マイバグ：1 行テーブル */
+.ov-brow {
+  display: grid;
+  grid-template-columns: 8px 52px minmax(0, 1fr) minmax(0, 180px) 84px 64px;
+  column-gap: 12px;
+  align-items: center;
+  height: 44px;
+  padding: 0 16px;
+  border-bottom: 1px solid #f5f5f5;
+  cursor: pointer;
+}
+.ov-brow:hover {
+  background: #fafafa;
+}
+.ov-brow-sev {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+}
+.ov-brow-no {
+  font-size: 12px;
+  color: rgba(0, 0, 0, 0.5);
+  font-variant-numeric: tabular-nums;
+}
+.ov-brow-title,
+.ov-brow-cust {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.ov-brow-cust,
+.ov-brow-age {
+  font-size: 12px;
+  color: rgba(0, 0, 0, 0.45);
+}
+.ov-brow-age {
+  text-align: right;
+}
+.ov-brow-status {
+  display: inline-block;
+  padding: 0 8px;
+  font-size: 12px;
+  line-height: 20px;
+  border-radius: 10px;
+  white-space: nowrap;
+}
+
+
+/* 直近のマイルストーン */
+.ov-mrow {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 16px;
+  border-bottom: 1px solid #f5f5f5;
+  cursor: pointer;
+  --ov-ms-c: #1677ff;
+}
+.ov-mrow.is-soon {
+  --ov-ms-c: #d46b08;
+}
+.ov-mrow.is-late {
+  --ov-ms-c: #cf1322;
+}
+.ov-mrow:hover {
+  background: #fafafa;
+}
+.ov-mrow-dia {
+  flex-shrink: 0;
+  width: 9px;
+  height: 9px;
+  background: var(--ov-ms-c);
+  transform: rotate(45deg);
+}
+.ov-mrow-main,
+.ov-mrow-date {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+.ov-mrow-main {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+.ov-mrow-name,
+.ov-mrow-proj {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.ov-mrow-name {
+  font-size: 13px;
+}
+.ov-mrow-proj {
+  font-size: 12px;
+  color: rgba(0, 0, 0, 0.45);
+}
+.ov-mrow-date {
+  flex-shrink: 0;
+  font-size: 12px;
+  text-align: right;
+  color: rgba(0, 0, 0, 0.6);
+}
+.ov-mrow-diff {
+  font-weight: 600;
+  color: var(--ov-ms-c);
+}
+
+/* 狭い画面：1 列・高さ固定を解除 */
+@media (max-width: 992px) {
+  .ov-kpis {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .ov-panel-span {
+    grid-row: auto;
+  }
+  .ov-grid {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: none;
+    height: auto;
+    min-height: 0;
+  }
+  .ov-panel-body {
+    max-height: 420px;
+  }
+  .ov-trow {
+    grid-template-columns: minmax(0, 1fr) 110px;
+    row-gap: 2px;
+    padding: 6px 16px;
+  }
+  .ov-trow > .ov-trow-tags,
+  .ov-trow > .ov-trow-progress.ant-progress {
+    display: none;
+  }
+  .ov-brow {
+    grid-template-columns: 8px 44px minmax(0, 1fr) 84px;
+  }
+  .ov-brow-cust,
+  .ov-brow-age {
+    display: none;
+  }
+}

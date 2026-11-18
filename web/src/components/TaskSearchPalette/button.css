@@ -1,0 +1,57 @@
+/* ページヘッダーに置く「見せかけの検索窓」。実体は ⌘K パレットを開くボタン。 */
+.tsp-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  height: 30px;
+  padding: 0 10px;
+  min-width: 200px;
+  border: 1px solid rgba(5, 5, 5, 0.1);
+  border-radius: 6px;
+  background: #fff;
+  color: rgba(0, 0, 0, 0.4);
+  font: inherit;
+  font-size: 12.5px;
+  cursor: pointer;
+}
+.tsp-btn:hover {
+  border-color: #91caff;
+  color: #1677ff;
+}
+.tsp-btn .anticon {
+  font-size: 13px;
+}
+.tsp-btn-label {
+  flex: 1;
+  text-align: left;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* アイコンだけに落とす（狭い画面 / ツールバーが混んでいる場所） */
+.tsp-btn.is-compact {
+  min-width: 0;
+  width: 30px;
+  padding: 0;
+  justify-content: center;
+}
+.tsp-btn.is-compact .tsp-btn-label,
+.tsp-btn.is-compact .tsp-kbd {
+  display: none;
+}
+
+/* 画面が狭いときは自動でアイコンだけにする。
+   ページヘッダーの extra は他のトグルと同じ行に並ぶので、ここが最初に溢れる。 */
+@media (max-width: 900px) {
+  .tsp-btn {
+    min-width: 0;
+    width: 30px;
+    padding: 0;
+    justify-content: center;
+  }
+  .tsp-btn .tsp-btn-label,
+  .tsp-btn .tsp-kbd {
+    display: none;
+  }
+}

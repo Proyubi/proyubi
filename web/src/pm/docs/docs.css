@@ -1,0 +1,615 @@
+/* 資料（外部ドライブのリンク）共通スタイル。設計：doc/design/pm-drive-docs.md */
+
+/* ---------- 種類アイコン（角丸方块） ---------- */
+.pm-doc-icon {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 6px;
+  color: #fff;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  line-height: 1;
+  font-family: -apple-system, "Segoe UI", Roboto, "Helvetica Neue", sans-serif;
+  user-select: none;
+}
+.pm-doc-icon.is-pdf {
+  background: #e5484d;
+}
+.pm-doc-icon.is-xls {
+  background: #1e8e4f;
+}
+.pm-doc-icon.is-doc {
+  background: #2f6bff;
+}
+.pm-doc-icon.is-ppt {
+  background: #f07c1b;
+}
+.pm-doc-icon.is-img {
+  background: #8e4ec6;
+}
+.pm-doc-icon.is-folder {
+  background: #fff4cc;
+  color: #e3a008;
+}
+.pm-doc-icon.is-file {
+  background: #8c8c8c;
+}
+.pm-doc-icon.is-link {
+  background: #f0f2f5;
+  color: #595959;
+}
+
+/* ---------- 保存先ラベル（色ドット） ---------- */
+.pm-doc-provider {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  white-space: nowrap;
+  font-size: 12px;
+  color: #595959;
+}
+.pm-doc-provider-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #bfbfbf;
+  flex: none;
+}
+.pm-doc-provider.is-google .pm-doc-provider-dot {
+  background: #1a73e8;
+}
+.pm-doc-provider.is-microsoft .pm-doc-provider-dot {
+  background: #0f7b6c;
+}
+.pm-doc-provider.is-box .pm-doc-provider-dot {
+  background: #0061d5;
+}
+
+.pm-doc-sep {
+  color: #bfbfbf;
+}
+
+/* ---------- プレビュー ---------- */
+.pm-doc-preview {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
+  border: 1px solid #f0f0f0;
+  border-radius: 8px;
+  overflow: hidden;
+  background: #fff;
+}
+.pm-doc-preview.is-empty {
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  color: #8c8c8c;
+  font-size: 13px;
+  background: #fafafa;
+  min-height: 240px;
+}
+.pm-doc-preview-empty-ico {
+  font-size: 28px;
+  color: #bfbfbf;
+}
+.pm-doc-preview-head {
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  border-bottom: 1px solid #f0f0f0;
+  background: #fafafa;
+}
+.pm-doc-preview-titles {
+  flex: 1;
+  min-width: 0;
+}
+.pm-doc-preview-name {
+  font-size: 14px;
+  font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.pm-doc-preview-meta {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 4px 6px;
+  margin-top: 2px;
+  font-size: 12px;
+  color: #8c8c8c;
+}
+.pm-doc-preview-frame {
+  flex: 1;
+  min-height: 320px;
+  width: 100%;
+  border: 0;
+  background: #f5f5f5;
+}
+.pm-doc-preview-hint {
+  flex: none;
+  padding: 6px 12px;
+  font-size: 12px;
+  line-height: 1.5;
+  color: #8c8c8c;
+  border-top: 1px solid #f0f0f0;
+  background: #fafafa;
+}
+.pm-doc-preview-hint a {
+  margin-left: 6px;
+  white-space: nowrap;
+}
+
+/* フォルダ表示時：中のファイルは登録するとプレビューできる、の案内 */
+.pm-doc-preview-folderbar {
+  flex: none;
+  padding: 8px 12px;
+  font-size: 12px;
+  line-height: 1.5;
+  color: #595959;
+  border-top: 1px solid #f0f0f0;
+  background: #f0f5ff;
+}
+
+/* 兜底カード（プレビュー不可） */
+.pm-doc-fallback {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  background: #fafafa;
+  min-height: 320px;
+}
+.pm-doc-fallback-card {
+  width: 100%;
+  max-width: 400px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  padding: 28px 24px;
+  text-align: center;
+  background: #fff;
+  border: 1px solid #f0f0f0;
+  border-radius: 12px;
+}
+.pm-doc-fallback-name {
+  max-width: 100%;
+  font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.pm-doc-fallback-title {
+  font-size: 13px;
+  color: #262626;
+}
+.pm-doc-fallback-desc {
+  font-size: 12px;
+  line-height: 1.6;
+  color: #8c8c8c;
+}
+.pm-doc-fallback-url {
+  max-width: 100%;
+  font-size: 11px;
+  color: #bfbfbf;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* ---------- 追加ダイアログ ---------- */
+.pm-doc-add-mode {
+  margin-top: 8px;
+}
+.pm-doc-hint {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: #8c8c8c;
+}
+.pm-doc-hint.is-ok {
+  color: #389e0d;
+}
+.pm-doc-opt {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+  vertical-align: middle;
+}
+.pm-doc-opt-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.pm-doc-taskopt {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.pm-doc-linkmodal-doc {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 4px 0 12px;
+  font-weight: 500;
+  min-width: 0;
+}
+.pm-doc-linkmodal-note {
+  margin-top: 8px;
+  font-size: 12px;
+  color: #8c8c8c;
+}
+
+/* ---------- タスク編集「資料」タブ ---------- */
+.pm-taskdocs {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
+  gap: 12px;
+}
+.pm-taskdocs-bar {
+  flex: none;
+}
+.pm-taskdocs-chips {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+}
+.pm-doc-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  max-width: 240px;
+  padding: 3px 6px 3px 4px;
+  border: 1px solid #f0f0f0;
+  border-radius: 6px;
+  background: #fff;
+  font-size: 12px;
+  cursor: pointer;
+  transition:
+    border-color 0.15s,
+    background 0.15s;
+}
+.pm-doc-chip:hover {
+  border-color: #d9d9d9;
+}
+.pm-doc-chip.is-active {
+  border-color: #2f6bff;
+  background: #f0f5ff;
+}
+.pm-doc-chip-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.pm-doc-chip-x {
+  flex: none;
+  font-size: 10px;
+  color: #bfbfbf;
+  padding: 2px;
+}
+.pm-doc-chip-x:hover {
+  color: #ff4d4f;
+}
+.pm-taskdocs-center {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+.pm-taskdocs-preview {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+/* ---------- ドロワー（案件資料 / 顧客資料） ---------- */
+.pm-docs-drawer-title {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 10px;
+  min-width: 0;
+}
+.pm-docs-drawer-sub {
+  font-size: 13px;
+  font-weight: 400;
+  color: #8c8c8c;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.pm-doc-root {
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 14px;
+  border: 1px solid #f0f0f0;
+  border-radius: 10px;
+  background: #fffdf5;
+}
+.pm-doc-root.is-unset {
+  background: #fafafa;
+  border-style: dashed;
+}
+.pm-doc-root-body {
+  flex: 1;
+  min-width: 0;
+}
+.pm-doc-root-caption {
+  font-size: 11px;
+  color: #8c8c8c;
+}
+.pm-doc-root-label {
+  font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.pm-doc-root-sub {
+  margin-top: 2px;
+  font-size: 12px;
+  color: #8c8c8c;
+}
+.pm-doc-root.is-banner {
+  background: #fff;
+  border-color: #e6e9ef;
+  padding: 12px 16px;
+}
+.pm-doc-root-path {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.pm-doc-root-links {
+  flex: none;
+  display: flex;
+  align-items: center;
+}
+.pm-doc-root-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 6px;
+}
+
+.pm-docs-views {
+  align-self: flex-start;
+  margin: 14px 0 12px;
+}
+.pm-docs-toolbar {
+  flex: none;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 14px 0 12px;
+}
+.pm-docs-center {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 240px;
+}
+
+/* 一覧 + プレビューの 2 カラム（狭い幅では縦積み） */
+.pm-docs-split {
+  flex: 1;
+  min-height: 0;
+  display: grid;
+  grid-template-columns: minmax(300px, 400px) minmax(0, 1fr);
+  grid-template-rows: minmax(0, 1fr);
+  gap: 14px;
+}
+.pm-docs-split.is-wide {
+  grid-template-columns: minmax(0, 1.25fr) minmax(320px, 1fr);
+}
+@media (max-width: 900px) {
+  .pm-docs-split,
+  .pm-docs-split.is-wide {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: none;
+  }
+}
+.pm-docs-preview-col {
+  min-height: 420px;
+  display: flex;
+  flex-direction: column;
+}
+.pm-docs-table {
+  min-width: 0;
+  overflow: auto;
+}
+
+.pm-docs-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  overflow-y: auto;
+  border: 1px solid #f0f0f0;
+  border-radius: 8px;
+}
+.pm-docs-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 10px 8px 10px 12px;
+  border-bottom: 1px solid #f5f5f5;
+  cursor: pointer;
+}
+.pm-docs-row:last-child {
+  border-bottom: 0;
+}
+.pm-docs-row:hover {
+  background: #fafafa;
+}
+.pm-docs-row.is-active {
+  background: #f0f5ff;
+}
+.pm-docs-row-body {
+  flex: 1;
+  min-width: 0;
+}
+.pm-docs-row-name {
+  font-weight: 500;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.pm-docs-row-meta {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 2px 6px;
+  margin-top: 2px;
+  font-size: 12px;
+  color: #8c8c8c;
+}
+.pm-docs-row-tags {
+  margin-top: 6px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 0;
+}
+.pm-docs-row-actions {
+  flex: none;
+  display: flex;
+}
+.pm-doc-tasktag {
+  max-width: 180px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  vertical-align: middle;
+}
+.pm-doc-tasktag.is-link {
+  cursor: pointer;
+}
+
+/* 顧客資料テーブル */
+.pm-docs-group {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-weight: 600;
+  color: #262626;
+}
+.pm-docs-group-count {
+  font-weight: 400;
+  font-size: 12px;
+  color: #8c8c8c;
+}
+.pm-docs-group-row > td {
+  background: #fafafa;
+}
+.pm-docs-row-click,
+.pm-docs-row-selected {
+  cursor: pointer;
+}
+.pm-docs-row-selected > td {
+  background: #f0f5ff;
+}
+.pm-docs-cell-name {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+.pm-docs-cell-text {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.pm-docs-cell-tags {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 4px 0;
+}
+.pm-docs-cell-actions {
+  display: inline-flex;
+}
+.pm-docs-muted {
+  font-size: 12px;
+  color: #8c8c8c;
+}
+
+/* ===== Google ドライブから選択（DocAddModal） ===== */
+.pm-doc-picker {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-bottom: 16px;
+}
+.pm-doc-picker-loading {
+  display: flex;
+  justify-content: center;
+  padding: 16px 0;
+}
+.pm-doc-picker-note {
+  color: #8c8c8c;
+  font-size: 12px;
+}
+.pm-doc-picked {
+  list-style: none;
+  margin: 0;
+  padding: 4px;
+  max-height: 260px;
+  overflow-y: auto;
+  border: 1px solid #f0f0f0;
+  border-radius: 8px;
+}
+.pm-doc-picked-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px;
+}
+.pm-doc-picked-row .ant-input {
+  flex: 1;
+  min-width: 0;
+}
+
+/* Google Picker は body 直下に出る。antd の Modal / Drawer（z-index 1000〜）より前面に出す */
+.picker-dialog-bg {
+  z-index: 2100 !important;
+}
+.picker-dialog {
+  z-index: 2101 !important;
+}
+
+/* 種類チップ（顧客資料ドロワー） */
+.pm-docs-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  align-items: center;
+}
+.pm-docs-chips .ant-tag {
+  margin-inline-end: 0;
+  padding: 2px 10px;
+  border-radius: 999px;
+  border: 1px solid #d9d9d9;
+  font-size: 13px;
+  cursor: pointer;
+}
+.pm-docs-chips .ant-tag-checkable-checked {
+  border-color: transparent;
+}
+.pm-doc-picker-import {
+  margin: 4px 0;
+}

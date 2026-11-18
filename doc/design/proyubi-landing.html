@@ -1,0 +1,1205 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title data-i18n="meta.title">Proyubi — AI ネイティブな案件管理</title>
+<!-- Proyubi 落地页设计原型（参考 hifox.com 的视觉语言）。单文件，直接用浏览器打开。 -->
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@500;600;700&family=Noto+Sans+JP:wght@400;500;700&display=swap" rel="stylesheet" />
+<style>
+  :root {
+    /* 品牌色取自 D1 logo */
+    --brand-sky: #7cc4ff;
+    --brand: #3a8dff;
+    --brand-deep: #2563ff;
+    --brand-navy: #0b2a9e;
+    --ink: #0b1a33;
+    --text: #222326;
+    --muted: #63646b;
+    --line: #e8e9ee;
+    --surface: #f5f7fb;
+    --bg: #ffffff;
+    /* hifox 式粉彩 */
+    --mint: #c9f4e3;
+    --peach: #fde2cf;
+    --lavender: #e2e3fb;
+    --sky: #d3e8ff;
+    --radius-xl: 28px;
+    --shadow-frame: 0 30px 80px -20px rgba(20, 40, 80, 0.2);
+  }
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; -webkit-font-smoothing: antialiased; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--text);
+    font-family: "Poppins", "Noto Sans JP", system-ui, -apple-system, "Hiragino Sans", sans-serif;
+    line-height: 1.6;
+  }
+  a { color: inherit; text-decoration: none; }
+  h1, h2, h3 { margin: 0; color: var(--ink); text-wrap: balance; word-break: auto-phrase; font-weight: 600; }
+  p { margin: 0; }
+  .container { width: 100%; max-width: 1180px; margin: 0 auto; padding: 0 20px; }
+
+  /* ---------- 通用部件 ---------- */
+  .eyebrow {
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 4px 12px; border-radius: 999px;
+    border: 1px solid rgba(11, 26, 51, 0.08); background: rgba(255, 255, 255, 0.75);
+    backdrop-filter: blur(8px);
+    font-size: 12px; font-weight: 500; color: var(--muted); letter-spacing: 0.02em;
+  }
+  .eyebrow .dot { width: 6px; height: 6px; border-radius: 50%; background: var(--brand); }
+  .eyebrow svg { width: 14px; height: 14px; color: var(--brand-deep); }
+  .btn {
+    display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+    height: 48px; padding: 0 24px; border-radius: 999px;
+    font-size: 14px; font-weight: 500; white-space: nowrap; cursor: pointer;
+    transition: transform .2s, background .2s, box-shadow .2s; border: 0;
+  }
+  .btn:hover { transform: translateY(-1px); }
+  .btn-dark { background: var(--ink); color: #fff; box-shadow: 0 10px 24px -8px rgba(11, 26, 51, .45); }
+  .btn-dark:hover { background: #1a2b4d; }
+  .btn-light { background: rgba(255,255,255,.8); color: var(--ink); border: 1px solid var(--line); backdrop-filter: blur(8px); }
+  .btn-sm { height: 36px; padding: 0 16px; font-size: 13px; }
+  .section { padding: 112px 0; }
+  .section-head { max-width: 760px; margin: 0 auto 56px; text-align: center; display: flex; flex-direction: column; align-items: center; gap: 16px; }
+  .h-display { font-size: clamp(40px, 6.2vw, 80px); line-height: 1.12; letter-spacing: -0.05em; }
+  .h-section { font-size: clamp(30px, 4.2vw, 56px); line-height: 1.18; letter-spacing: -0.045em; }
+  .h-card { font-size: clamp(26px, 3vw, 40px); line-height: 1.22; letter-spacing: -0.04em; }
+  .lead { font-size: 17px; color: var(--muted); line-height: 1.8; }
+  .mesh {
+    background:
+      radial-gradient(40% 55% at 6% 28%, var(--mint) 0%, transparent 70%),
+      radial-gradient(35% 45% at 50% 62%, var(--peach) 0%, transparent 70%),
+      radial-gradient(42% 55% at 94% 22%, var(--lavender) 0%, transparent 70%),
+      radial-gradient(30% 40% at 72% 92%, var(--sky) 0%, transparent 70%);
+    filter: blur(24px);
+  }
+  .reveal { opacity: 0; transform: translateY(24px); transition: opacity .7s ease, transform .7s ease; }
+  .reveal.in { opacity: 1; transform: none; }
+
+  /* ---------- 导航（悬浮胶囊） ---------- */
+  .nav-wrap { position: sticky; top: 0; z-index: 50; padding: 14px 16px 0; margin-bottom: -76px; pointer-events: none; }
+  .nav {
+    pointer-events: auto; max-width: 1000px; margin: 0 auto; height: 52px;
+    display: flex; align-items: center; justify-content: space-between; gap: 8px;
+    padding: 0 8px 0 18px; border-radius: 999px;
+    border: 1px solid rgba(11,26,51,.06); transition: box-shadow .3s;
+    position: relative; isolation: isolate;
+  }
+  /* 毛玻璃放在伪元素上：.nav 本身若带 backdrop-filter，会成为 backdrop root，溢出的语言菜单会被错误合成 */
+  .nav::before { content: ""; position: absolute; inset: 0; z-index: -1; border-radius: inherit; background: rgba(255,255,255,.6); backdrop-filter: blur(14px); transition: background .3s; }
+  .nav.scrolled { box-shadow: 0 12px 30px -12px rgba(11,26,51,.15); }
+  .nav.scrolled::before { background: rgba(255,255,255,.88); }
+  .brand { display: flex; align-items: center; gap: 8px; font-weight: 600; font-size: 17px; color: var(--ink); letter-spacing: -0.01em; }
+  .brand svg { width: 22px; height: 23px; }
+  .nav-links { display: flex; gap: 4px; font-size: 13.5px; color: var(--muted); }
+  .nav-links a { padding: 6px 12px; border-radius: 999px; transition: background .2s, color .2s; }
+  .nav-links a:hover { background: var(--surface); color: var(--ink); }
+  .nav-right { display: flex; align-items: center; gap: 4px; }
+  .nav-login { font-size: 13.5px; color: var(--muted); padding: 6px 12px; }
+
+  /* ---------- Hero ---------- */
+  .hero { position: relative; overflow: hidden; isolation: isolate; padding: 164px 0 40px; text-align: center; }
+  .hero .mesh { position: absolute; inset: -40px; z-index: -2; opacity: .95; }
+  .hero::after { content: ""; position: absolute; left: 0; right: 0; bottom: 0; height: 260px; z-index: -1; background: linear-gradient(transparent, var(--bg)); }
+  .hero h1 { margin-top: 24px; }
+  .hero .lead { max-width: 640px; margin: 24px auto 0; }
+  .hero-cta { margin-top: 36px; display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; }
+  .hero-note { margin-top: 14px; font-size: 12px; color: var(--muted); }
+
+  /* 玻璃画框 + 应用截图（纯 HTML 绘制的 Proyubi 界面） */
+  .frame { margin: 72px auto 0; max-width: 1080px; padding: 8px; border-radius: var(--radius-xl); background: rgba(255,255,255,.45); border: 1px solid rgba(255,255,255,.9); box-shadow: var(--shadow-frame); backdrop-filter: blur(16px); }
+  .app { border-radius: 22px; overflow: hidden; background: #fff; border: 1px solid var(--line); display: grid; grid-template-columns: 196px 1fr; text-align: left; font-family: "Noto Sans JP", sans-serif; font-size: 12px; min-height: 470px; }
+  .app-side { background: #f8f9fc; border-right: 1px solid var(--line); padding: 16px 12px; display: flex; flex-direction: column; gap: 2px; }
+  .app-side .brand { font-size: 14px; margin: 0 6px 16px; font-family: "Poppins", sans-serif; }
+  .app-side .brand svg { width: 18px; height: 19px; }
+  .side-item { display: flex; align-items: center; gap: 8px; padding: 7px 10px; border-radius: 8px; color: #4b4f5c; }
+  .side-item i { width: 14px; height: 14px; border-radius: 4px; background: #dfe3ec; flex: none; }
+  .side-item.active { background: #e8f1ff; color: var(--brand-deep); font-weight: 500; }
+  .side-item.active i { background: var(--brand); }
+  .side-label { font-size: 10.5px; color: #9aa0ad; margin: 14px 10px 4px; }
+  .app-main { padding: 18px 22px; display: flex; flex-direction: column; gap: 14px; min-width: 0; }
+  .app-top { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+  .app-top b { font-size: 15px; color: var(--ink); }
+  .seg { display: inline-flex; background: #f1f3f8; border-radius: 8px; padding: 3px; gap: 2px; }
+  .seg span { padding: 4px 10px; border-radius: 6px; color: #6b7080; }
+  .seg span.on { background: #fff; color: var(--ink); box-shadow: 0 1px 2px rgba(0,0,0,.06); }
+  .gantt { border: 1px solid var(--line); border-radius: 12px; overflow: hidden; }
+  .g-head, .g-row { display: grid; grid-template-columns: 200px 1fr; }
+  .g-head { background: #fafbfd; border-bottom: 1px solid var(--line); color: #8a90a0; font-size: 10.5px; }
+  .g-head > div:first-child { padding: 8px 12px; }
+  .g-days { display: grid; grid-template-columns: repeat(14, 1fr); }
+  .g-days span { padding: 8px 0; text-align: center; border-left: 1px solid #f0f2f6; }
+  .g-days span.today { color: var(--brand-deep); font-weight: 700; background: #eef5ff; }
+  .g-row { border-bottom: 1px solid #f1f3f7; height: 34px; align-items: center; }
+  .g-row:last-child { border-bottom: 0; }
+  .g-name { padding: 0 12px; display: flex; align-items: center; gap: 6px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: #2d3140; }
+  .g-name.sub { padding-left: 28px; color: #4b4f5c; }
+  .g-name .ava { width: 18px; height: 18px; border-radius: 50%; flex: none; font-size: 9px; color: #fff; display: grid; place-items: center; font-weight: 700; }
+  .g-name .ava.ai { background: linear-gradient(135deg, var(--brand-sky), var(--brand-deep)); }
+  .g-track { position: relative; height: 100%; background-image: linear-gradient(90deg, #f3f5f9 1px, transparent 1px); background-size: calc(100% / 14) 100%; }
+  .bar { position: absolute; top: 9px; height: 16px; border-radius: 6px; background: linear-gradient(90deg, var(--brand-sky), var(--brand)); }
+  .bar.done { background: #b9dcff; }
+  .bar.late { background: linear-gradient(90deg, #ffb4a8, #ff6b5a); }
+  .bar.ai { background: repeating-linear-gradient(135deg, #dce9ff 0 6px, #c9dcff 6px 12px); border: 1px dashed var(--brand); }
+  .bar .pg { position: absolute; inset: 0; border-radius: 6px; background: rgba(11,42,158,.25); }
+  .ms { position: absolute; top: 10px; width: 13px; height: 13px; background: var(--ink); transform: rotate(45deg); border-radius: 2px; }
+  .today-line { position: absolute; top: 0; bottom: 0; width: 2px; background: var(--brand-deep); opacity: .5; }
+  .float-card {
+    position: absolute; background: #fff; border: 1px solid var(--line); border-radius: 14px; padding: 12px 14px;
+    box-shadow: 0 18px 40px -16px rgba(11, 26, 51, .25); font-family: "Noto Sans JP", sans-serif; font-size: 12px; text-align: left;
+  }
+
+  /* ---------- 功能大卡（交替排列） ---------- */
+  .cards { display: flex; flex-direction: column; gap: 28px; }
+  .fcard {
+    display: grid; grid-template-columns: 1fr 1.1fr; gap: 56px; align-items: center;
+    padding: 56px; border-radius: var(--radius-xl); border: 1px solid rgba(11,26,51,.06); overflow: hidden;
+  }
+  .fcard.rev .fcard-text { order: 2; }
+  .fcard-text { display: flex; flex-direction: column; gap: 18px; align-items: flex-start; }
+  .tint-sky { background: radial-gradient(60% 80% at 100% 0%, var(--sky) 0%, transparent 70%), linear-gradient(135deg, var(--surface), #fff); }
+  .tint-peach { background: radial-gradient(60% 80% at 0% 100%, var(--peach) 0%, transparent 70%), linear-gradient(135deg, #fff, var(--surface)); }
+  .tint-lav { background: radial-gradient(60% 80% at 100% 100%, var(--lavender) 0%, transparent 70%), linear-gradient(135deg, var(--surface), #fff); }
+  .tint-mint { background: radial-gradient(60% 80% at 0% 0%, var(--mint) 0%, transparent 70%), linear-gradient(135deg, #fff, var(--surface)); }
+  .checks { list-style: none; padding: 0; margin: 6px 0 0; width: 100%; display: flex; flex-direction: column; gap: 2px; }
+  .checks li { display: flex; gap: 10px; align-items: flex-start; padding: 9px 16px; font-size: 14.5px; font-weight: 500; color: #2d3140; }
+  .checks li svg { flex: none; width: 16px; height: 16px; margin-top: 4px; color: #9aa0ad; }
+  .checks li.hl { flex-direction: column; gap: 4px; background: rgba(255,255,255,.85); border: 1px solid rgba(11,26,51,.06); border-radius: 16px; padding: 16px 18px; box-shadow: 0 4px 14px -8px rgba(11,26,51,.12); }
+  .checks li.hl .t { display: flex; gap: 10px; align-items: center; font-weight: 600; }
+  .checks li.hl .t svg { margin: 0; color: #10b981; }
+  .checks li.hl .d { padding-left: 26px; font-size: 13.5px; font-weight: 400; color: var(--muted); line-height: 1.75; }
+  .shot { background: #fff; border: 1px solid var(--line); border-radius: 18px; box-shadow: 0 24px 60px -24px rgba(11,26,51,.25); font-family: "Noto Sans JP", sans-serif; font-size: 12px; overflow: hidden; }
+  .shot-bar { display: flex; align-items: center; justify-content: space-between; padding: 12px 16px; border-bottom: 1px solid var(--line); }
+  .shot-bar b { color: var(--ink); font-size: 13px; }
+  .shot-body { padding: 16px; display: flex; flex-direction: column; gap: 10px; }
+
+  /* 俯瞰 KPI */
+  .kpis { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
+  .kpi { border: 1px solid var(--line); border-radius: 12px; padding: 10px 12px; }
+  .kpi small { color: #8a90a0; font-size: 10.5px; }
+  .kpi div { font-family: "Poppins", sans-serif; font-weight: 600; font-size: 22px; color: var(--ink); line-height: 1.3; }
+  .kpi.red div { color: #ef4444; }
+  .risk { display: grid; grid-template-columns: auto 1fr auto auto; gap: 10px; align-items: center; padding: 9px 10px; border-radius: 10px; background: #fafbfd; }
+  .tag { font-size: 10px; padding: 2px 8px; border-radius: 999px; font-weight: 500; white-space: nowrap; }
+  .tag.red { background: #fee2e2; color: #dc2626; }
+  .tag.amber { background: #fef3c7; color: #b45309; }
+  .tag.blue { background: #e0edff; color: var(--brand-deep); }
+  .tag.gray { background: #eef0f4; color: #6b7080; }
+  .prog { width: 70px; height: 6px; background: #eef0f4; border-radius: 99px; overflow: hidden; }
+  .prog i { display: block; height: 100%; background: var(--brand); border-radius: 99px; }
+
+  /* AI 对话 + 审批 */
+  .chat { display: flex; flex-direction: column; gap: 10px; }
+  .msg { max-width: 86%; padding: 10px 13px; border-radius: 14px; line-height: 1.7; }
+  .msg.user { align-self: flex-end; background: var(--ink); color: #fff; border-bottom-right-radius: 4px; }
+  .msg.bot { align-self: flex-start; background: #f3f6fb; color: #2d3140; border-bottom-left-radius: 4px; }
+  .proposal { border: 1px solid #cfe1ff; background: linear-gradient(180deg, #f5f9ff, #fff); border-radius: 14px; padding: 12px; display: flex; flex-direction: column; gap: 8px; }
+  .proposal-row { display: flex; align-items: center; gap: 8px; padding: 7px 10px; background: #fff; border: 1px solid var(--line); border-radius: 10px; }
+  .proposal-row .plus { color: #10b981; font-weight: 700; }
+  .proposal-actions { display: flex; gap: 6px; justify-content: flex-end; }
+  .mini-btn { padding: 5px 12px; border-radius: 999px; font-size: 11px; border: 1px solid var(--line); background: #fff; color: #4b4f5c; }
+  .mini-btn.pri { background: var(--ink); color: #fff; border-color: var(--ink); }
+
+  /* 共享（浏览器框） */
+  .browser-top { display: flex; align-items: center; gap: 10px; padding: 10px 14px; background: #f3f5f9; border-bottom: 1px solid var(--line); }
+  .dots { display: flex; gap: 5px; }
+  .dots i { width: 9px; height: 9px; border-radius: 50%; background: #ff5f57; }
+  .dots i:nth-child(2) { background: #febc2e; }
+  .dots i:nth-child(3) { background: #28c840; }
+  .url { flex: 1; background: #fff; border: 1px solid var(--line); border-radius: 999px; padding: 4px 12px; color: #6b7080; font-size: 11px; display: flex; gap: 6px; align-items: center; }
+  .url b { color: var(--ink); font-weight: 500; }
+  .mock-canvas { height: 210px; margin: 14px; border-radius: 12px; background: linear-gradient(135deg, #eef5ff, #f8f3ff); position: relative; overflow: hidden; }
+  .mock-canvas .blk { position: absolute; background: #fff; border-radius: 8px; box-shadow: 0 6px 16px -10px rgba(11,26,51,.3); }
+
+  /* ---------- 集成网格 ---------- */
+  .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  .icard { background: var(--surface); border-radius: 24px; padding: 30px 32px; display: flex; flex-direction: column; gap: 10px; transition: background .25s; }
+  .icard:hover { background: #eef1f7; }
+  .icard h3 { font-size: 20px; letter-spacing: -0.02em; }
+  .icard p { color: var(--muted); font-size: 14px; line-height: 1.75; }
+  .chips { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
+  .chip { display: inline-flex; align-items: center; gap: 6px; height: 34px; padding: 0 12px 0 6px; border-radius: 999px; background: #fff; border: 1px solid var(--line); font-size: 12.5px; font-weight: 500; color: #2d3140; }
+  .chip i { width: 22px; height: 22px; border-radius: 50%; display: grid; place-items: center; font-style: normal; font-size: 11px; font-weight: 700; color: #fff; }
+
+  /* ---------- 使用场景（左侧 tab） ---------- */
+  .scenes { display: grid; grid-template-columns: 300px 1fr; gap: 28px; align-items: start; }
+  .tabs { display: flex; flex-direction: column; gap: 4px; position: sticky; top: 96px; }
+  .tab { display: flex; align-items: center; gap: 12px; padding: 13px 16px; border-radius: 14px; font-size: 15px; color: #6b7080; cursor: pointer; border: 0; background: transparent; text-align: left; font-family: inherit; transition: background .2s, color .2s; }
+  .tab small { font-family: "Poppins", sans-serif; font-size: 11px; width: 24px; height: 24px; border-radius: 50%; display: grid; place-items: center; background: #f1f3f8; color: #9aa0ad; flex: none; }
+  .tab:hover { background: var(--surface); color: var(--ink); }
+  .tab.on { background: linear-gradient(90deg, #e3f0ff, #eef6ff); color: var(--ink); font-weight: 600; }
+  .tab.on small { background: var(--brand); color: #fff; }
+  .scene-panel { background: var(--surface); border-radius: var(--radius-xl); padding: 40px; min-height: 420px; }
+  .scene-panel h3 { font-size: 30px; letter-spacing: -0.035em; }
+  .scene-panel .lead { margin-top: 10px; font-size: 15px; }
+  .flow { margin-top: 28px; display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+  .step { background: #fff; border: 1px solid var(--line); border-radius: 18px; padding: 18px; position: relative; }
+  .step small { font-family: "Poppins", sans-serif; color: var(--brand-deep); font-weight: 600; font-size: 12px; }
+  .step b { display: block; margin-top: 6px; color: var(--ink); font-size: 15px; }
+  .step p { margin-top: 6px; color: var(--muted); font-size: 13px; line-height: 1.7; }
+  .scene-quote { margin-top: 18px; padding: 16px 18px; border-radius: 16px; background: #fff; border: 1px dashed #c9dcff; color: #2d3140; font-size: 14px; }
+
+  /* ---------- 价格 ---------- */
+  .plans { display: grid; grid-template-columns: repeat(3, 1fr); gap: 18px; max-width: 1040px; margin: 0 auto; }
+  .plan { position: relative; display: flex; flex-direction: column; gap: 18px; padding: 32px; border-radius: 26px; background: rgba(255,255,255,.85); border: 1px solid var(--line); box-shadow: 0 4px 20px -12px rgba(11,26,51,.12); }
+  .plan.pop { background: radial-gradient(70% 60% at 100% 0%, var(--sky) 0%, transparent 70%), #fff; border-color: #b9d6ff; box-shadow: 0 24px 50px -24px rgba(37, 99, 255, .35); }
+  .plan .badge { position: absolute; top: -12px; left: 28px; background: var(--ink); color: #fff; font-size: 11px; padding: 4px 12px; border-radius: 999px; font-weight: 500; }
+  .plan h3 { font-size: 20px; }
+  .plan .for { color: var(--muted); font-size: 13.5px; margin-top: 4px; }
+  .price { font-family: "Poppins", "Noto Sans JP", sans-serif; font-size: 40px; font-weight: 600; letter-spacing: -0.03em; color: var(--ink); line-height: 1.1; }
+  .price small { display: inline-block; font-size: 14px; line-height: 1.5; color: var(--muted); font-weight: 400; letter-spacing: 0; }
+  .plan ul { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 10px; font-size: 14px; }
+  .plan li { display: flex; gap: 8px; }
+  .plan li svg { width: 16px; height: 16px; color: #10b981; flex: none; margin-top: 4px; }
+  .plan .btn { margin-top: auto; width: 100%; }
+
+  /* ---------- FAQ ---------- */
+  .faq { max-width: 760px; margin: 0 auto; display: flex; flex-direction: column; gap: 12px; }
+  details { background: var(--surface); border-radius: 18px; transition: background .2s; }
+  details:hover, details[open] { background: #eef1f7; }
+  summary { list-style: none; cursor: pointer; display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 20px 24px; font-weight: 600; color: var(--ink); font-size: 15.5px; }
+  summary::-webkit-details-marker { display: none; }
+  summary .pl { width: 28px; height: 28px; border-radius: 50%; background: #fff; display: grid; place-items: center; flex: none; transition: transform .3s; box-shadow: 0 1px 3px rgba(0,0,0,.06); color: var(--muted); }
+  details[open] summary .pl { transform: rotate(45deg); }
+  details p { padding: 0 24px 22px; color: var(--muted); font-size: 14px; line-height: 1.85; }
+
+  /* ---------- CTA + Footer ---------- */
+  .cta { position: relative; overflow: hidden; isolation: isolate; border-radius: 32px; border: 1px solid rgba(11,26,51,.06); padding: 96px 24px; text-align: center; }
+  .cta .mesh { position: absolute; inset: -40px; z-index: -1; }
+  .cta .lead { max-width: 560px; margin: 18px auto 0; }
+  footer { border-top: 1px solid var(--line); padding: 64px 0 40px; font-size: 14px; margin-top: 112px; }
+  .foot { display: grid; grid-template-columns: 1.4fr repeat(3, 1fr); gap: 40px; }
+  .foot p { color: var(--muted); font-size: 13px; line-height: 1.8; margin-top: 14px; max-width: 280px; }
+  .foot h4 { margin: 0 0 16px; font-size: 13px; font-weight: 500; color: var(--muted); }
+  .foot ul { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 12px; }
+  .foot ul a { color: #2d3140; }
+  .foot ul a:hover { color: var(--brand-deep); }
+  .copy { margin-top: 48px; padding-top: 24px; border-top: 1px solid var(--line); display: flex; justify-content: space-between; gap: 12px; color: #9aa0ad; font-size: 12px; flex-wrap: wrap; }
+
+  /* ---------- 语言切换 ---------- */
+  /* 拉丁字母语言：标题略收小、字距略放松；越南语叠加声调符号，行高加大 */
+  html:is([lang="en"], [lang="es"], [lang="fr"], [lang="id"], [lang="vi"]) .h-display { font-size: clamp(38px, 5.6vw, 72px); letter-spacing: -0.04em; }
+  html:is([lang="en"], [lang="es"], [lang="fr"], [lang="id"], [lang="vi"]) .h-section { letter-spacing: -0.035em; }
+  html[lang="vi"] :is(.h-display, .h-section, .h-card) { line-height: 1.24; }
+  html[lang="zh-CN"] body { font-family: "Poppins", "PingFang SC", "Noto Sans SC", "Microsoft YaHei", system-ui, sans-serif; }
+  .lang { position: relative; }
+  .lang-btn { display: inline-flex; align-items: center; gap: 6px; height: 36px; padding: 0 12px; border-radius: 999px; border: 0; background: transparent; color: var(--muted); font: inherit; font-size: 13px; cursor: pointer; transition: background .2s, color .2s; }
+  .lang-btn:hover, .lang.open .lang-btn { background: var(--surface); color: var(--ink); }
+  .lang-menu { position: absolute; right: 0; top: calc(100% + 10px); min-width: 190px; padding: 6px; border-radius: 16px; background: #fff; border: 1px solid var(--line); box-shadow: 0 20px 40px -16px rgba(11,26,51,.25); display: none; z-index: 60; }
+  .lang.open .lang-menu { display: block; }
+  .lang-menu button { display: flex; width: 100%; align-items: center; justify-content: space-between; gap: 12px; padding: 9px 12px; border: 0; border-radius: 10px; background: transparent; font: inherit; font-size: 13.5px; color: #2d3140; cursor: pointer; text-align: left; }
+  .lang-menu button:hover { background: var(--surface); }
+  .lang-menu button.on { color: var(--brand-deep); font-weight: 600; }
+  .lang-menu button small { color: #9aa0ad; font-size: 11px; font-weight: 400; text-transform: uppercase; }
+  .foot-langs { display: flex; flex-wrap: wrap; gap: 4px 12px; }
+  .foot-langs button { border: 0; background: none; padding: 0; font: inherit; font-size: 12px; color: #9aa0ad; cursor: pointer; }
+  .foot-langs button:hover, .foot-langs button.on { color: var(--ink); }
+
+  /* ---------- 响应式 ---------- */
+  @media (max-width: 960px) {
+    .nav-links, .nav-login { display: none; }
+    .lang-btn #langLabel { display: none; }
+    .fcard { grid-template-columns: 1fr; padding: 32px 24px; gap: 32px; }
+    .fcard.rev .fcard-text { order: 0; }
+    .grid2, .plans { grid-template-columns: 1fr; }
+    .scenes { grid-template-columns: 1fr; }
+    .tabs { position: static; flex-direction: row; overflow-x: auto; scrollbar-width: none; }
+    .tab { white-space: nowrap; }
+    .foot { grid-template-columns: 1fr 1fr; }
+    .section { padding: 80px 0; }
+  }
+  @media (max-width: 640px) {
+    .hero { padding-top: 128px; }
+    .app { grid-template-columns: 1fr; }
+    .app-side { display: none; }
+    .g-head, .g-row { grid-template-columns: 120px 1fr; }
+    .kpis { grid-template-columns: repeat(2, 1fr); }
+    .flow { grid-template-columns: 1fr; }
+    .scene-panel { padding: 24px; }
+    .float-card { display: none; }
+    .risk { grid-template-columns: auto 1fr; }
+    .risk .prog, .risk .when { display: none; }
+  }
+</style>
+</head>
+<body>
+
+<!-- D1 マーク（logo 正本：brand/mark.svg） -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <defs>
+    <linearGradient id="pp-t" x1="0" y1="0" x2="132" y2="104" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="#7CC4FF"/><stop offset="1" stop-color="#3A8DFF"/></linearGradient>
+    <linearGradient id="pp-s" x1="0" y1="48" x2="40" y2="140" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="#2563FF"/><stop offset="1" stop-color="#0B2A9E"/></linearGradient>
+    <linearGradient id="pp-h" x1="50" y1="0" x2="80" y2="0" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="#0A3AA8" stop-opacity=".35"/><stop offset="1" stop-color="#0A3AA8" stop-opacity="0"/></linearGradient>
+    <symbol id="pp-mark" viewBox="0 0 132 140">
+      <path d="M12 0H80A52 52 0 0 1 80 104H50V96H0V12A12 12 0 0 1 12 0Z" fill="url(#pp-t)"/>
+      <path d="M50 48H78A28 28 0 0 1 78 104H50Z" fill="#FFFFFF" opacity=".14"/>
+      <path d="M50 48H76V104H50Z" fill="url(#pp-h)"/>
+      <path d="M0 74A26 26 0 0 1 26 48H50V114A25 25 0 0 1 0 114Z" fill="url(#pp-s)"/>
+    </symbol>
+    <symbol id="i-check" viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+    <symbol id="i-arrow" viewBox="0 0 24 24"><path d="M5 12h14M13 6l6 6-6 6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+    <symbol id="i-plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></symbol>
+    <symbol id="i-spark" viewBox="0 0 24 24"><path d="M12 3l1.8 5.2L19 10l-5.2 1.8L12 17l-1.8-5.2L5 10l5.2-1.8z" fill="currentColor"/></symbol>
+    <symbol id="i-chart" viewBox="0 0 24 24"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></symbol>
+    <symbol id="i-gantt" viewBox="0 0 24 24"><path d="M3 6h10M7 12h12M5 18h8" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/></symbol>
+    <symbol id="i-globe" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c2.5 2.6 3.8 5.6 3.8 9s-1.3 6.4-3.8 9c-2.5-2.6-3.8-5.6-3.8-9S9.5 5.6 12 3z"/></g></symbol>
+    <symbol id="i-share" viewBox="0 0 24 24"><path d="M10 14 21 3M21 3h-6M21 3v6M19 14v5a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2h5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+  </defs>
+</svg>
+
+<!-- ============ ナビ ============ -->
+<div class="nav-wrap">
+  <nav class="nav" id="nav">
+    <a href="#" class="brand"><svg><use href="#pp-mark"/></svg>Proyubi</a>
+    <div class="nav-links">
+      <a href="#features" data-i18n="nav.features">機能</a>
+      <a href="#ai" data-i18n="nav.ai">AI 連携</a>
+      <a href="#scenes" data-i18n="nav.scenes">活用シーン</a>
+      <a href="#pricing" data-i18n="nav.pricing">料金</a>
+      <a href="#faq" data-i18n="nav.faq">FAQ</a>
+    </div>
+    <div class="nav-right">
+      <div class="lang" id="lang"><button type="button" class="lang-btn" id="langBtn" aria-haspopup="menu" aria-expanded="false"><svg width="16" height="16"><use href="#i-globe"/></svg><span id="langLabel">日本語</span></button><div class="lang-menu" id="langMenu" role="menu"></div></div>
+      <a href="#" class="nav-login" data-i18n="nav.login">ログイン</a>
+      <a href="#pricing" class="btn btn-dark btn-sm nav-cta" data-i18n="nav.cta">無料で始める</a>
+    </div>
+  </nav>
+</div>
+
+<!-- ============ Hero ============ -->
+<header class="hero">
+  <div class="mesh" aria-hidden="true"></div>
+  <div class="container">
+    <span class="eyebrow"><span class="dot"></span><span data-i18n="hero.eyebrow">AI ネイティブな案件管理</span></span>
+    <h1 class="h-display" data-i18n="hero.title">人と AI が、<br />同じガントで案件を回す。</h1>
+    <p class="lead" data-i18n="hero.lead">WBS・ガント・俯瞰ダッシュボードをひとつに。Claude や ChatGPT から「これタスク化して」と言うだけで、提案 → 承認 → 反映まで Proyubi が引き受けます。</p>
+    <div class="hero-cta">
+      <a href="#pricing" class="btn btn-dark"><span data-i18n="hero.cta1">無料で始める</span> <svg width="16" height="16"><use href="#i-arrow"/></svg></a>
+      <a href="#features" class="btn btn-light" data-i18n="hero.cta2">機能を見る</a>
+    </div>
+    <p class="hero-note" data-i18n="hero.note">クレジットカード不要 · 5 分でチームを招待</p>
+
+    <div class="frame reveal" style="position:relative">
+      <div class="app">
+        <aside class="app-side">
+          <div class="brand"><svg><use href="#pp-mark"/></svg>Proyubi</div>
+          <div class="side-item"><i></i><span data-i18n="app.overview">俯瞰</span></div>
+          <div class="side-item"><i></i><span data-i18n="app.calendar">カレンダー</span></div>
+          <div class="side-item active"><i></i><span data-i18n="app.projects">案件</span></div>
+          <div class="side-item"><i></i><span data-i18n="app.quality">品質・バグ</span></div>
+          <div class="side-item"><i></i><span data-i18n="app.resources">リソース</span></div>
+          <div class="side-label" data-i18n="app.projects">案件</div>
+          <div class="side-item"><i></i><span data-i18n="proj.a">受注管理リニューアル</span></div>
+          <div class="side-item"><i></i><span data-i18n="proj.b">会員アプリ v2</span></div>
+          <div class="side-item"><i></i><span data-i18n="proj.c">LP 制作（春）</span></div>
+        </aside>
+        <div class="app-main">
+          <div class="app-top">
+            <b><span data-i18n="proj.a">受注管理リニューアル</span> · <span data-i18n="app.gantt">ガント</span></b>
+            <div class="seg"><span data-i18n="app.d">日</span><span class="on" data-i18n="app.w">週</span><span data-i18n="app.m">月</span></div>
+          </div>
+          <div class="gantt">
+            <div class="g-head"><div data-i18n="app.task">タスク</div><div class="g-days">
+              <span>4</span><span>5</span><span>6</span><span>7</span><span>8</span><span>9</span><span>10</span><span>11</span><span class="today">12</span><span>13</span><span>14</span><span>15</span><span>16</span><span>17</span>
+            </div></div>
+            <div class="g-row"><div class="g-name"><b data-i18n="t.req">要件定義</b></div><div class="g-track"><div class="bar done" style="left:0;width:28%"></div></div></div>
+            <div class="g-row"><div class="g-name sub"><span class="ava" style="background:#f59e0b" data-i18n="av.1">佐</span><span data-i18n="t.screens">画面一覧の確定</span></div><div class="g-track"><div class="bar done" style="left:7%;width:21%"></div></div></div>
+            <div class="g-row"><div class="g-name"><b data-i18n="t.design">設計</b></div><div class="g-track"><div class="bar" style="left:21%;width:43%"><div class="pg" style="width:60%"></div></div></div></div>
+            <div class="g-row"><div class="g-name sub"><span class="ava" style="background:#8b5cf6" data-i18n="av.2">田</span><span data-i18n="t.api">API 設計</span></div><div class="g-track"><div class="bar late" style="left:21%;width:29%"></div></div></div>
+            <div class="g-row"><div class="g-name sub"><span class="ava ai">AI</span><span data-i18n="t.testDraft">テストケース草案</span></div><div class="g-track"><div class="bar ai" style="left:57%;width:22%"></div></div></div>
+            <div class="g-row"><div class="g-name"><b data-i18n="t.impl">実装</b></div><div class="g-track"><div class="bar" style="left:50%;width:50%"><div class="pg" style="width:10%"></div></div></div></div>
+            <div class="g-row"><div class="g-name sub"><span class="ava" style="background:#10b981" data-i18n="av.3">鈴</span><span data-i18n="t.orderList">受注一覧画面</span></div><div class="g-track"><div class="bar" style="left:57%;width:29%"></div></div></div>
+            <div class="g-row"><div class="g-name" data-i18n="t.review">◆ 顧客レビュー</div><div class="g-track"><div class="ms" style="left:83%"></div><div class="today-line" style="left:60.5%"></div></div></div>
+          </div>
+        </div>
+      </div>
+      <div class="float-card" style="right:-28px;top:120px;width:250px">
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px"><span class="tag blue" data-i18n="f1.tag">AI 提案</span><span style="color:#8a90a0" data-i18n="f1.time">たった今</span></div>
+        <div style="color:var(--ink);font-weight:500" data-i18n="f1.msg">「API 設計」が 2 日遅延。実装の開始を 13 日へずらしますか？</div>
+        <div class="proposal-actions" style="margin-top:10px"><span class="mini-btn" data-i18n="f1.later">あとで</span><span class="mini-btn pri" data-i18n="f1.ok">承認して反映</span></div>
+      </div>
+      <div class="float-card" style="left:-24px;bottom:56px;width:210px">
+        <div style="color:#8a90a0;font-size:11px" data-i18n="f2.label">今週の遅延タスク</div>
+        <div style="display:flex;align-items:baseline;gap:6px"><span style="font-family:Poppins;font-size:26px;font-weight:600;color:#ef4444">3</span><span style="color:#8a90a0" data-i18n="f2.unit">件 · 先週 −2</span></div>
+      </div>
+    </div>
+  </div>
+</header>
+
+<!-- ============ 機能（交互カード） ============ -->
+<section class="section" id="features" style="padding-top:72px">
+  <div class="container">
+    <div class="section-head reveal">
+      <span class="eyebrow"><span class="dot"></span><span data-i18n="feat.eyebrow">機能</span></span>
+      <h2 class="h-section" data-i18n="feat.title">案件管理を、AI と一緒に。</h2>
+      <p class="lead" data-i18n="feat.lead">AI はチャットの中だけに置いておくものではありません。Proyubi は AI をチームの現場、つまり WBS とガントの上に連れてきます。</p>
+    </div>
+
+    <div class="cards">
+      <!-- 1 俯瞰 -->
+      <article class="fcard tint-sky reveal">
+        <div class="fcard-text">
+          <span class="eyebrow"><svg><use href="#i-chart"/></svg><span data-i18n="c1.eyebrow">俯瞰 · OVERVIEW</span></span>
+          <h3 class="h-card" data-i18n="c1.title">遅れている案件が、<br />開いた瞬間に分かる。</h3>
+          <p class="lead" style="font-size:15.5px" data-i18n="c1.lead">全案件を横断して、期限超過・進捗遅れ・未割当を自動で拾い出します。案件をひとつずつ開いて確認する必要はもうありません。</p>
+          <ul class="checks">
+            <li class="hl"><span class="t"><svg><use href="#i-check"/></svg><span data-i18n="c1.hl">全社ビュー / マイビュー</span></span><span class="d" data-i18n="c1.hlDesc">マネージャーは全案件のリスク、メンバーは自分の今日やることを。ロールに合わせて既定ビューが切り替わります。</span></li>
+            <li><svg><use href="#i-check"/></svg><span data-i18n="c1.p1">依存ブロック・未割当もサーバー側で判定</span></li>
+            <li><svg><use href="#i-check"/></svg><span data-i18n="c1.p2">リスク行からワンクリックでガントへ</span></li>
+          </ul>
+        </div>
+        <div class="shot">
+          <div class="shot-bar"><b data-i18n="ov.title">俯瞰</b><div class="seg"><span class="on" data-i18n="ov.all">全社</span><span data-i18n="ov.me">マイビュー</span></div></div>
+          <div class="shot-body">
+            <div class="kpis">
+              <div class="kpi"><small data-i18n="k.active">進行中案件</small><div>12</div></div>
+              <div class="kpi red"><small data-i18n="k.lateProj">遅延案件</small><div>2</div></div>
+              <div class="kpi red"><small data-i18n="k.lateTask">遅延タスク</small><div>3</div></div>
+              <div class="kpi"><small data-i18n="k.week">今週の期日</small><div>9</div></div>
+            </div>
+            <div class="risk"><span class="tag red" data-i18n="r.overdue">期限超過</span><span data-i18n="r1.name">API 設計 · 受注管理リニューアル</span><span class="when" style="color:#ef4444" data-i18n="w.plus2">+2 日</span><span class="prog"><i style="width:55%"></i></span></div>
+            <div class="risk"><span class="tag amber" data-i18n="r.behind">進捗遅れ</span><span data-i18n="r2.name">決済連携 · 会員アプリ v2</span><span class="when" style="color:#8a90a0" data-i18n="w.in3">あと 3 日</span><span class="prog"><i style="width:30%"></i></span></div>
+            <div class="risk"><span class="tag gray" data-i18n="r.unassigned">未割当</span><span data-i18n="r3.name">OGP 画像 · LP 制作（春）</span><span class="when" style="color:#8a90a0" data-i18n="w.in5">あと 5 日</span><span class="prog"><i style="width:0%"></i></span></div>
+            <div class="risk"><span class="tag blue" data-i18n="r.blocked">依存待ち</span><span data-i18n="r4.name">受注一覧画面 · 受注管理リニューアル</span><span class="when" style="color:#8a90a0" data-i18n="w.today">本日</span><span class="prog"><i style="width:10%"></i></span></div>
+          </div>
+        </div>
+      </article>
+
+      <!-- 2 ガント -->
+      <article class="fcard tint-peach rev reveal">
+        <div class="fcard-text">
+          <span class="eyebrow"><svg><use href="#i-gantt"/></svg><span data-i18n="c2.eyebrow">WBS · ガント</span></span>
+          <h3 class="h-card" data-i18n="c2.title">WBS とガントを、<br />ひとつの画面で。</h3>
+          <p class="lead" style="font-size:15.5px" data-i18n="c2.lead">顧客 → 案件 → タスクの階層をそのままガントに。ドラッグで日程を動かせば、依存関係と祝日を考慮して後続も追従します。</p>
+          <ul class="checks">
+            <li class="hl"><span class="t"><svg><use href="#i-check"/></svg><span data-i18n="c2.hl">依存関係・マイルストーン・祝日カレンダー</span></span><span class="d" data-i18n="c2.hlDesc">日本の祝日と自社休業日を反映。時間単位の工数にも対応しています。</span></li>
+            <li><svg><use href="#i-check"/></svg><span data-i18n="c2.p1">タスクごとのコメントと変更履歴</span></li>
+            <li><svg><use href="#i-check"/></svg><span data-i18n="c2.p2">マインドマップから WBS へそのまま展開</span></li>
+          </ul>
+        </div>
+        <div class="shot">
+          <div class="shot-bar"><b data-i18n="proj.b">会員アプリ v2</b><span class="tag blue" data-i18n="g2.progress">進捗 64%</span></div>
+          <div class="gantt" style="border:0;border-radius:0">
+            <div class="g-head" style="grid-template-columns:150px 1fr"><div data-i18n="app.task">タスク</div><div class="g-days" style="grid-template-columns:repeat(10,1fr)"><span data-i18n="dw.mon">月</span><span data-i18n="dw.tue">火</span><span data-i18n="dw.wed">水</span><span class="today" data-i18n="dw.thu">木</span><span data-i18n="dw.fri">金</span><span data-i18n="dw.mon">月</span><span data-i18n="dw.tue">火</span><span data-i18n="dw.wed">水</span><span data-i18n="dw.thu">木</span><span data-i18n="dw.fri">金</span></div></div>
+            <div class="g-row" style="grid-template-columns:150px 1fr"><div class="g-name"><b data-i18n="t2.auth">認証</b></div><div class="g-track" style="background-size:10% 100%"><div class="bar done" style="left:0;width:40%"></div></div></div>
+            <div class="g-row" style="grid-template-columns:150px 1fr"><div class="g-name sub" data-i18n="t2.login">ログイン画面</div><div class="g-track" style="background-size:10% 100%"><div class="bar done" style="left:0;width:20%"></div></div></div>
+            <div class="g-row" style="grid-template-columns:150px 1fr"><div class="g-name sub" data-i18n="t2.sns">SNS 連携</div><div class="g-track" style="background-size:10% 100%"><div class="bar" style="left:20%;width:30%"><div class="pg" style="width:70%"></div></div></div></div>
+            <div class="g-row" style="grid-template-columns:150px 1fr"><div class="g-name"><b data-i18n="t2.pay">決済</b></div><div class="g-track" style="background-size:10% 100%"><div class="bar" style="left:30%;width:60%"><div class="pg" style="width:20%"></div></div></div></div>
+            <div class="g-row" style="grid-template-columns:150px 1fr"><div class="g-name sub" data-i18n="t2.stripe">Stripe 連携</div><div class="g-track" style="background-size:10% 100%"><div class="bar late" style="left:30%;width:30%"></div></div></div>
+            <div class="g-row" style="grid-template-columns:150px 1fr"><div class="g-name sub" data-i18n="t2.receipt">領収書メール</div><div class="g-track" style="background-size:10% 100%"><div class="bar" style="left:60%;width:30%"></div></div></div>
+            <div class="g-row" style="grid-template-columns:150px 1fr"><div class="g-name" data-i18n="t2.release">◆ リリース</div><div class="g-track" style="background-size:10% 100%"><div class="ms" style="left:92%"></div><div class="today-line" style="left:35%"></div></div></div>
+          </div>
+        </div>
+      </article>
+
+      <!-- 3 AI -->
+      <article class="fcard tint-lav reveal" id="ai">
+        <div class="fcard-text">
+          <span class="eyebrow"><svg><use href="#i-spark"/></svg><span data-i18n="c3.eyebrow">AI アシスタント · MCP</span></span>
+          <h3 class="h-card" data-i18n="c3.title">「これタスク化して」で、<br />WBS に着地する。</h3>
+          <p class="lead" style="font-size:15.5px" data-i18n="c3.lead">顧客のメールや議事録を貼るだけで、AI がタスク草案を作ります。書き込みはすべて提案として届き、人が承認するまで反映されません。</p>
+          <ul class="checks">
+            <li class="hl"><span class="t"><svg><use href="#i-check"/></svg><span data-i18n="c3.hl">提案 → 承認 → 実行、すべて監査ログ付き</span></span><span class="d" data-i18n="c3.hlDesc">AI による変更は必ず人の承認を通ります。誰が何を承認したか、あとから辿れます。</span></li>
+            <li><svg><use href="#i-check"/></svg><span data-i18n="c3.p1">Claude / ChatGPT には URL を貼るだけで接続</span></li>
+            <li><svg><use href="#i-check"/></svg><span data-i18n="c3.p2">週次の「顧客向け進捗報告書」を自動で下書き</span></li>
+          </ul>
+        </div>
+        <div class="shot">
+          <div class="shot-bar"><b>Proyubi AI</b><span class="tag blue" data-i18n="ai.mode">提案モード</span></div>
+          <div class="shot-body chat">
+            <div class="msg user" data-i18n="ai.user">先方からのメール、要件をタスク化して受注管理リニューアルに入れて</div>
+            <div class="msg bot" data-i18n="ai.bot">メールから 3 件のタスクを抽出しました。既存の「API 設計」と依存関係があります。</div>
+            <div class="proposal">
+              <div class="proposal-row"><span class="plus">＋</span><span data-i18n="ai.r1">CSV 一括取込（受注）</span><span class="tag gray" style="margin-left:auto" data-i18n="u.d3">3 日</span></div>
+              <div class="proposal-row"><span class="plus">＋</span><span data-i18n="ai.r2">出荷ステータス Webhook</span><span class="tag gray" style="margin-left:auto" data-i18n="u.d2">2 日</span></div>
+              <div class="proposal-row"><span class="plus">＋</span><span data-i18n="ai.r3">権限：営業ロール追加</span><span class="tag gray" style="margin-left:auto" data-i18n="u.d1">1 日</span></div>
+              <div class="proposal-actions"><span class="mini-btn" data-i18n="ai.edit">修正</span><span class="mini-btn pri" data-i18n="ai.approve">承認して WBS に追加</span></div>
+            </div>
+          </div>
+        </div>
+      </article>
+
+      <!-- 4 モックアップ共有 -->
+      <article class="fcard tint-mint rev reveal">
+        <div class="fcard-text">
+          <span class="eyebrow"><svg><use href="#i-share"/></svg><span data-i18n="c4.eyebrow">モックアップ · デザインボード</span></span>
+          <h3 class="h-card" data-i18n="c4.title">効果図は、<br />自社ドメインで顧客へ。</h3>
+          <p class="lead" style="font-size:15.5px" data-i18n="c4.lead">Claude Code や Codex が作った HTML モックアップを、案件やタスクに紐付けて公開できます。顧客には自社ドメインの共有リンクだけを送ります。</p>
+          <ul class="checks">
+            <li class="hl"><span class="t"><svg><use href="#i-check"/></svg><span data-i18n="c4.hl">期限付き・停止できる共有リンク</span></span><span class="d" data-i18n="c4.hlDesc">版ごとに履歴を残します。リンクの再発行や停止もワンクリックです。</span></li>
+            <li><svg><use href="#i-check"/></svg><span data-i18n="c4.p1">白板と .pen デザインを案件ごとに保管</span></li>
+            <li><svg><use href="#i-check"/></svg><span data-i18n="c4.p2">Google Drive の資料をガントに紐付け</span></li>
+          </ul>
+        </div>
+        <div class="shot">
+          <div class="browser-top"><span class="dots"><i></i><i></i><i></i></span><span class="url">🔒 <b>project.your-company.jp</b>/share/m/7f3a…</span></div>
+          <div class="mock-canvas">
+            <div class="blk" style="left:6%;top:10%;width:88%;height:16%"></div>
+            <div class="blk" style="left:6%;top:33%;width:42%;height:56%"></div>
+            <div class="blk" style="left:52%;top:33%;width:42%;height:25%"></div>
+            <div class="blk" style="left:52%;top:64%;width:42%;height:25%;background:linear-gradient(90deg,#7cc4ff,#3a8dff)"></div>
+          </div>
+          <div style="display:flex;align-items:center;justify-content:space-between;padding:0 16px 14px;gap:8px">
+            <span style="color:#6b7080" data-i18n="mk.caption">受注一覧 v3 · 10/22 更新</span>
+            <span style="display:flex;gap:6px"><span class="tag gray" data-i18n="mk.expire">7 日で失効</span><span class="tag blue" data-i18n="mk.views">閲覧 12</span></span>
+          </div>
+        </div>
+      </article>
+    </div>
+  </div>
+</section>
+
+<!-- ============ 連携 ============ -->
+<section class="section" style="padding-top:24px">
+  <div class="container">
+    <div class="section-head reveal">
+      <span class="eyebrow"><span class="dot"></span><span data-i18n="int.eyebrow">いまの道具のまま</span></span>
+      <h2 class="h-section" data-i18n="int.title">チームを、少しずつ<br />AI ネイティブに。</h2>
+      <p class="lead" data-i18n="int.lead">業務の進め方を作り直す必要はありません。いま使っている Agent・コード・連絡手段・資料はそのままで、Proyubi につなぐだけで使えます。</p>
+    </div>
+    <div class="grid2">
+      <div class="icard reveal"><h3 data-i18n="i1.t">外部 Agent をそのまま接続</h3><p data-i18n="i1.d">MCP サーバーを標準で提供しています。いつもの AI から案件の照会、タスク追加、リスク確認ができます。</p>
+        <div class="chips"><span class="chip"><i style="background:#d97757">C</i>Claude</span><span class="chip"><i style="background:#10a37f">G</i>ChatGPT</span><span class="chip"><i style="background:#1f2937">X</i>Codex</span><span class="chip"><i style="background:#20808d">P</i>Perplexity</span><span class="chip"><i style="background:#9aa0ad">+</i><span data-i18n="chip.mcp">MCP 対応 Agent</span></span></div></div>
+      <div class="icard reveal"><h3 data-i18n="i2.t">コードと CI をタスクへ</h3><p data-i18n="i2.d">コミットとプルリクエストをタスクに自動で紐付けます。CI の結果を見ながら、その場で受け入れ判断ができます。</p>
+        <div class="chips"><span class="chip"><i style="background:#24292f">G</i>GitHub</span><span class="chip"><i style="background:#fc6d26">G</i>GitLab</span></div></div>
+      <div class="icard reveal"><h3 data-i18n="i3.t">通知は、届く場所へ</h3><p data-i18n="i3.d">期日前アラートや承認待ちを、チームが普段見ているチャネルに届けます。</p>
+        <div class="chips"><span class="chip"><i style="background:#06c755">L</i>LINE</span><span class="chip"><i style="background:#3a8dff">@</i><span data-i18n="chip.mail">メール</span></span><span class="chip"><i style="background:#4a154b">S</i>Slack</span></div></div>
+      <div class="icard reveal"><h3 data-i18n="i4.t">資料はリンクのまま</h3><p data-i18n="i4.d">顧客資料は Drive から登録し、プレビューもできます。Excel の WBS はそのまま取り込めます。</p>
+        <div class="chips"><span class="chip"><i style="background:#1a73e8">D</i>Google Drive</span><span class="chip"><i style="background:#107c41">X</i>Excel</span><span class="chip"><i style="background:#9aa0ad">◇</i>Figma</span></div></div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ 活用シーン ============ -->
+<section class="section" id="scenes" style="padding-top:24px">
+  <div class="container">
+    <div class="section-head reveal">
+      <span class="eyebrow"><span class="dot"></span><span data-i18n="sc.eyebrow">活用シーン</span></span>
+      <h2 class="h-section" data-i18n="sc.title">どんな案件も、Proyubi で。</h2>
+    </div>
+    <div class="scenes reveal">
+      <div class="tabs" role="tablist" id="tabs"></div>
+      <div class="scene-panel" id="panel" role="tabpanel"></div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ 料金 ============ -->
+<section class="section" id="pricing" style="position:relative;isolation:isolate;overflow:hidden;padding-top:24px">
+  <div class="mesh" aria-hidden="true" style="position:absolute;left:0;right:0;bottom:0;height:70%;z-index:-1;opacity:.5"></div>
+  <div class="container">
+    <div class="section-head reveal">
+      <span class="eyebrow"><span class="dot"></span><span data-i18n="pr.eyebrow">料金</span></span>
+      <h2 class="h-section" data-i18n="pr.title">小さく始めて、<br />必要なら自社運用も。</h2>
+      <p class="lead" data-i18n="pr.lead">クラウド版は無料から使えます。社内規程でクラウドが使えない場合は、自社サーバーでの運用も選べます。</p>
+    </div>
+    <div class="plans">
+      <div class="plan reveal">
+        <div><h3>Free</h3><p class="for" data-i18n="free.for">個人・小さなチームの試用に</p></div>
+        <div class="price">¥0 <small data-i18n="free.note">ずっと無料</small></div>
+        <ul><li><svg><use href="#i-check"/></svg><span data-i18n="free.l1">1 チーム · 案件 3 件まで</span></li><li><svg><use href="#i-check"/></svg><span data-i18n="free.l2">WBS · ガント · 俯瞰</span></li><li><svg><use href="#i-check"/></svg><span data-i18n="free.l3">外部 Agent（MCP）接続</span></li></ul>
+        <a href="#" class="btn btn-light" data-i18n="free.btn">無料で始める</a>
+      </div>
+      <div class="plan pop reveal">
+        <span class="badge" data-i18n="pro.badge">おすすめ</span>
+        <div><h3>Pro</h3><p class="for" data-i18n="pro.for">受託・制作チームの本番運用に</p></div>
+        <div class="price">¥— <small data-i18n="pro.note">/ ユーザー・月（価格調整中）</small></div>
+        <ul><li><svg><use href="#i-check"/></svg><span data-i18n="pro.l1">案件・メンバー無制限、複数チーム</span></li><li><svg><use href="#i-check"/></svg><span data-i18n="pro.l2">内蔵 AI アシスタント（提案・承認）</span></li><li><svg><use href="#i-check"/></svg><span data-i18n="pro.l3">モックアップ共有 · 自社ドメイン</span></li><li><svg><use href="#i-check"/></svg><span data-i18n="pro.l4">週次進捗報告書の自動下書き</span></li></ul>
+        <a href="#" class="btn btn-dark" data-i18n="pro.btn">14 日間 Pro を試す</a>
+      </div>
+      <div class="plan reveal">
+        <div><h3 data-i18n="self.name">セルフホスト</h3><p class="for" data-i18n="self.for">社内規程でクラウドを使えない組織に</p></div>
+        <div class="price" data-i18n="self.price">お見積り</div>
+        <ul><li><svg><use href="#i-check"/></svg><span data-i18n="self.l1">自社サーバー / 閉域網に導入</span></li><li><svg><use href="#i-check"/></svg><span data-i18n="self.l2">オープンソース版をベースに拡張</span></li><li><svg><use href="#i-check"/></svg><span data-i18n="self.l3">導入・運用サポート</span></li></ul>
+        <a href="#" class="btn btn-light" data-i18n="self.btn">相談する</a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ FAQ ============ -->
+<section class="section" id="faq" style="padding-top:24px">
+  <div class="container">
+    <div class="section-head reveal">
+      <span class="eyebrow"><span class="dot"></span><span data-i18n="faq.eyebrow">FAQ</span></span>
+      <h2 class="h-section" data-i18n="faq.title">よくある質問</h2>
+    </div>
+    <div class="faq">
+      <details class="reveal"><summary><span data-i18n="q1">Proyubi は AI エージェントですか？</span><span class="pl"><svg width="14" height="14"><use href="#i-plus"/></svg></span></summary><p data-i18n="a1">いいえ。Proyubi は案件管理の基盤です。AI は WBS やガントの上で提案を出す役割で、決めるのは人です。Claude や ChatGPT などの外部 Agent も、同じ「提案 → 承認」の仕組みで接続します。</p></details>
+      <details class="reveal"><summary><span data-i18n="q2">AI が勝手にタスクを書き換えることはありますか？</span><span class="pl"><svg width="14" height="14"><use href="#i-plus"/></svg></span></summary><p data-i18n="a2">ありません。AI による書き込みはすべて提案として届き、承認されるまで反映されません。承認者と内容は監査ログに残ります。</p></details>
+      <details class="reveal"><summary><span data-i18n="q3">Excel の WBS から移行できますか？</span><span class="pl"><svg width="14" height="14"><use href="#i-plus"/></svg></span></summary><p data-i18n="a3">できます。Excel の WBS をそのまま取り込めるほか、AI に貼り付けてタスク草案にすることもできます。</p></details>
+      <details class="reveal"><summary><span data-i18n="q4">顧客にも画面を見せられますか？</span><span class="pl"><svg width="14" height="14"><use href="#i-plus"/></svg></span></summary><p data-i18n="a4">モックアップは期限付きの共有リンクで顧客に公開できます。リンクは自社ドメインで発行され、いつでも停止できます。</p></details>
+      <details class="reveal"><summary><span data-i18n="q5">自社サーバーで運用できますか？</span><span class="pl"><svg width="14" height="14"><use href="#i-plus"/></svg></span></summary><p data-i18n="a5">セルフホスト版で対応しています。オープンソース版をベースに、導入と運用もサポートします。</p></details>
+    </div>
+  </div>
+</section>
+
+<!-- ============ CTA ============ -->
+<section style="padding-top:24px">
+  <div class="container">
+    <div class="cta reveal">
+      <div class="mesh" aria-hidden="true"></div>
+      <h2 class="h-section" data-i18n="cta.title">今日から、AI と案件を回す。</h2>
+      <p class="lead" data-i18n="cta.lead">登録は 1 分。いまの WBS を取り込めば、そのまま始められます。</p>
+      <div class="hero-cta"><a href="#" class="btn btn-dark"><span data-i18n="cta.btn1">無料で始める</span> <svg width="16" height="16"><use href="#i-arrow"/></svg></a><a href="#" class="btn btn-light" data-i18n="cta.btn2">デモを予約</a></div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ Footer ============ -->
+<footer>
+  <div class="container">
+    <div class="foot">
+      <div><a href="#" class="brand"><svg><use href="#pp-mark"/></svg>Proyubi</a><p data-i18n="ft.tag">人と AI が同じガントで働く、AI ネイティブな案件管理。</p></div>
+      <div><h4 data-i18n="ft.product">プロダクト</h4><ul><li><a href="#features" data-i18n="ft.overview">俯瞰</a></li><li><a href="#features" data-i18n="ft.gantt">WBS · ガント</a></li><li><a href="#ai" data-i18n="ft.ai">AI アシスタント</a></li><li><a href="#features" data-i18n="ft.mock">モックアップ共有</a></li></ul></div>
+      <div><h4 data-i18n="ft.scenes">活用シーン</h4><ul><li><a href="#scenes" data-i18n="ft.s1">受託開発</a></li><li><a href="#scenes" data-i18n="ft.s2">制作会社</a></li><li><a href="#scenes" data-i18n="ft.s3">社内 IT</a></li><li><a href="#pricing" data-i18n="ft.self">セルフホスト</a></li></ul></div>
+      <div><h4 data-i18n="ft.res">リソース</h4><ul><li><a href="#" data-i18n="ft.help">ヘルプ</a></li><li><a href="#" data-i18n="ft.mcp">MCP 接続ガイド</a></li><li><a href="#" data-i18n="ft.terms">利用規約</a></li><li><a href="#" data-i18n="ft.privacy">プライバシーポリシー</a></li></ul></div>
+    </div>
+    <div class="copy"><span>© 2026 Proyubi</span><span class="foot-langs" id="footLangs"></span></div>
+  </div>
+</footer>
+
+<script>
+  /* ================= 多语言 =================
+   * 日语原文直接写在 DOM 里（data-i18n），启动时读出来作为 ja 词典；
+   * 其他语言只写译文，缺的键回退到日语。
+   * 语言优先级：?lang= > localStorage > 浏览器语言 > ja
+   */
+  const LANGS = [
+    { code: "ja", html: "ja", label: "日本語" },
+    { code: "zh", html: "zh-CN", label: "简体中文" },
+    { code: "en", html: "en", label: "English" },
+    { code: "es", html: "es", label: "Español" },
+    { code: "vi", html: "vi", label: "Tiếng Việt" },
+    { code: "fr", html: "fr", label: "Français" },
+    { code: "id", html: "id", label: "Bahasa Indonesia" },
+  ];
+
+  // 场景：[标签名, 标题, 说明, [[步骤, 说明] x3], 引言]
+  const SCENES = {
+    ja: [
+      ["受託開発の進行管理", "要件から納品まで、顧客と同じ画面で。", "見積り時の WBS をそのまま進行管理に使えます。仕様変更が来ても、影響範囲と遅延が数字で見えます。", [["要件を取り込む", "顧客メール・議事録から AI がタスク草案"], ["ガントで合意", "マイルストーンを顧客レビューに設定"], ["週次で報告", "進捗報告書を AI が下書き、PM が確認して送付"]], "「来週の報告書、先に下書きしておいて」で金曜の夕方が空きます。"],
+      ["制作会社のデザイン確認", "効果図のやり取りを、ひとつの場所に。", "モックアップ・白板・.pen をタスクに紐付けて保管します。顧客には共有リンクだけを送ります。", [["モックアップ公開", "Claude Code の HTML をそのまま版管理"], ["顧客レビュー", "期限付きリンクで閲覧、修正はタスク化"], ["確定版を保管", "案件のデザインボードに集約"]], "メールに添付した「最新版」がどれか、もう迷いません。"],
+      ["社内 IT のバックログ", "依頼が埋もれない、見える台帳に。", "部署からの依頼を顧客別に整理し、品質・バグも同じ場所で追跡します。", [["依頼を受け付け", "フォームやチャットから AI が起票"], ["優先度を決める", "負荷と期日を俯瞰で確認"], ["完了を報告", "依頼元に自動で通知"]], "誰が何を抱えているか、俯瞰を開けば分かります。"],
+      ["複数案件のリソース調整", "誰が、いつ、どれだけ空いているか。", "メンバーの負荷を案件横断で可視化します。過負荷は AI が見つけて調整案を出します。", [["負荷を可視化", "日単位・時間単位で稼働を集計"], ["偏りを検知", "AI が過負荷と空きを提示"], ["再配置を承認", "提案を承認するとガントに反映"]], "アサイン会議が 1 時間から 15 分になりました。"],
+      ["Agent と人の協働", "AI にも、担当タスクを。", "テストケース作成や仕様の矛盾チェックなど、AI に任せられる作業は AI に割り当てます。成果物は人がレビューします。", [["AI に割り当て", "タスクの担当者に AI を指定"], ["成果物を提出", "テスト草案・差分レポートを添付"], ["人がレビュー", "承認して完了、差し戻しも可能"]], "ガントの中に、人と AI の担当が並びます。"],
+    ],
+    zh: [
+      ["外包开发的进度管理", "从需求到交付，和客户看同一个画面。", "报价时做的 WBS 直接用于进度管理。需求变更时，影响范围和延期都能用数字看清。", [["导入需求", "AI 从客户邮件、会议纪要生成任务草案"], ["在甘特图上达成共识", "把客户评审设为里程碑"], ["每周汇报", "AI 起草周报，PM 确认后发送"]], "“下周的周报，先帮我起个草”——周五傍晚就空出来了。"],
+      ["设计公司的稿件确认", "效果图的往来，集中在一个地方。", "原型、白板、.pen 稿都挂在任务上保存。发给客户的只有一条分享链接。", [["发布原型", "Claude Code 生成的 HTML 直接做版本管理"], ["客户评审", "通过有期限的链接查看，修改意见转成任务"], ["归档定稿", "集中到项目的设计看板"]], "再也不用纠结邮件附件里哪个才是“最新版”。"],
+      ["企业内部 IT 的需求池", "需求不再被淹没，变成看得见的台账。", "按部门整理各部门提来的需求，质量和缺陷也在同一处跟踪。", [["受理需求", "AI 从表单或聊天中自动建单"], ["确定优先级", "在概览里查看负荷和期限"], ["汇报完成", "自动通知需求方"]], "谁手上有什么活，打开概览就知道。"],
+      ["多项目的资源调配", "谁、什么时候、有多少空闲。", "跨项目可视化成员负荷。负荷过高时，AI 会发现并给出调整方案。", [["负荷可视化", "按天、按小时汇总工作量"], ["发现不均", "AI 指出过载和空闲"], ["批准调配", "批准提案后自动反映到甘特图"]], "排人会议从 1 小时缩短到 15 分钟。"],
+      ["Agent 与人的协作", "给 AI 也分配任务。", "写测试用例、检查需求矛盾这类工作交给 AI，成果由人来审核。", [["分配给 AI", "把任务负责人设为 AI"], ["提交成果", "附上测试草案、差异报告"], ["人工审核", "批准后完成，也可以退回"]], "甘特图里，人和 AI 的任务并排而列。"],
+    ],
+    en: [
+      ["Client project delivery", "From requirements to delivery, on the same screen as your client.", "The WBS from your estimate becomes your delivery plan. When the spec changes, impact and delay show up as numbers.", [["Bring in requirements", "AI drafts tasks from client emails and meeting notes"], ["Agree on the Gantt", "Set client reviews as milestones"], ["Report weekly", "AI drafts the report; the PM checks and sends it"]], "“Draft next week's report for me” — and your Friday evening is free again."],
+      ["Design reviews at agencies", "Every round of mockups, in one place.", "Mockups, whiteboards and .pen files live on the task. Clients just get a share link.", [["Publish mockups", "Version Claude Code HTML as-is"], ["Client review", "Viewed via expiring links; feedback becomes tasks"], ["Archive the final", "Collected on the project's design board"]], "No more guessing which email attachment is the “latest”."],
+      ["Internal IT backlog", "Requests that don't get buried.", "Organize requests by department, and track quality issues and bugs in the same place.", [["Take requests", "AI files tickets from forms or chat"], ["Set priorities", "Check load and deadlines in the overview"], ["Close the loop", "Requesters are notified automatically"]], "Who's holding what? Open the overview and you'll know."],
+      ["Resourcing across projects", "Who's free, when, and how much.", "See each member's load across projects. AI spots overload and proposes adjustments.", [["See the load", "Daily and hourly workload totals"], ["Spot imbalance", "AI flags overload and spare capacity"], ["Approve the shuffle", "Approved changes flow into the Gantt"]], "Staffing meetings went from an hour to 15 minutes."],
+      ["Agents and people, together", "Give AI its own tasks.", "Hand work like drafting test cases or checking specs for conflicts to AI, and have people review the output.", [["Assign to AI", "Set AI as the task owner"], ["Deliver output", "Attach test drafts and diff reports"], ["Human review", "Approve to close, or send it back"]], "People and AI, side by side on the Gantt."],
+    ],
+    es: [
+      ["Desarrollo para clientes", "De los requisitos a la entrega, en la misma pantalla que tu cliente.", "El WBS del presupuesto se convierte en tu plan de entrega. Si cambia el alcance, el impacto y el retraso se ven en cifras.", [["Incorporar requisitos", "La IA redacta tareas a partir de emails y actas"], ["Acordar el Gantt", "Fija las revisiones del cliente como hitos"], ["Informar cada semana", "La IA redacta el informe; el PM lo revisa y lo envía"]], "«Prepárame el borrador del informe de la semana que viene»: tu viernes por la tarde vuelve a ser tuyo."],
+      ["Revisiones de diseño en agencias", "Todas las rondas de mockups, en un solo lugar.", "Mockups, pizarras y archivos .pen viven en la tarea. El cliente solo recibe un enlace.", [["Publicar mockups", "Versiona el HTML de Claude Code tal cual"], ["Revisión del cliente", "Lo ve con un enlace con caducidad; sus comentarios se vuelven tareas"], ["Archivar la versión final", "Todo reunido en el tablero de diseño del proyecto"]], "Se acabó adivinar qué adjunto es «el último»."],
+      ["Backlog de TI interna", "Solicitudes que no se pierden.", "Organiza las solicitudes por departamento y sigue la calidad y los errores en el mismo sitio.", [["Recibir solicitudes", "La IA crea tickets desde formularios o chat"], ["Priorizar", "Revisa carga y plazos en el resumen"], ["Cerrar el ciclo", "Se avisa automáticamente a quien lo pidió"]], "¿Quién tiene qué entre manos? Abre el resumen y lo sabrás."],
+      ["Recursos entre proyectos", "Quién está libre, cuándo y cuánto.", "Visualiza la carga de cada persona en todos los proyectos. La IA detecta la sobrecarga y propone ajustes.", [["Ver la carga", "Totales de trabajo por día y por hora"], ["Detectar desequilibrios", "La IA señala sobrecargas y huecos"], ["Aprobar la reasignación", "Los cambios aprobados pasan al Gantt"]], "Las reuniones de asignación pasaron de una hora a 15 minutos."],
+      ["Agentes y personas, juntos", "Dale a la IA sus propias tareas.", "Delega en la IA trabajos como redactar casos de prueba o buscar contradicciones en la especificación, y que una persona revise el resultado.", [["Asignar a la IA", "Pon a la IA como responsable de la tarea"], ["Entregar resultados", "Adjunta borradores de pruebas e informes de diferencias"], ["Revisión humana", "Aprueba para cerrar o devuélvela"]], "Personas e IA, codo con codo en el Gantt."],
+    ],
+    vi: [
+      ["Quản lý tiến độ dự án outsource", "Từ yêu cầu đến bàn giao, cùng một màn hình với khách hàng.", "WBS lúc báo giá dùng luôn để quản lý tiến độ. Khi yêu cầu thay đổi, phạm vi ảnh hưởng và độ trễ hiện rõ bằng con số.", [["Nhập yêu cầu", "AI soạn task từ email và biên bản họp của khách"], ["Thống nhất trên Gantt", "Đặt buổi khách duyệt làm mốc"], ["Báo cáo hằng tuần", "AI soạn báo cáo, PM kiểm tra rồi gửi"]], "“Soạn trước báo cáo tuần sau giúp tôi” — chiều thứ Sáu lại thảnh thơi."],
+      ["Duyệt thiết kế ở công ty thiết kế", "Mọi vòng trao đổi mockup ở cùng một chỗ.", "Mockup, bảng trắng và file .pen được gắn vào task. Khách hàng chỉ nhận một đường link.", [["Đăng mockup", "Quản lý phiên bản HTML từ Claude Code"], ["Khách hàng duyệt", "Xem qua link có thời hạn, góp ý chuyển thành task"], ["Lưu bản chốt", "Tập trung trên bảng thiết kế của dự án"]], "Không còn phải đoán file đính kèm nào là “bản mới nhất”."],
+      ["Backlog của IT nội bộ", "Yêu cầu không còn bị chìm.", "Sắp xếp yêu cầu theo phòng ban, theo dõi chất lượng và lỗi ở cùng một nơi.", [["Tiếp nhận yêu cầu", "AI tạo phiếu từ form hoặc chat"], ["Xếp ưu tiên", "Xem tải công việc và hạn chót trên tổng quan"], ["Báo hoàn thành", "Tự động thông báo cho người yêu cầu"]], "Ai đang ôm việc gì, mở tổng quan là biết."],
+      ["Điều phối nguồn lực nhiều dự án", "Ai rảnh, lúc nào, rảnh bao nhiêu.", "Hiển thị tải công việc của từng người trên mọi dự án. AI phát hiện quá tải và đề xuất điều chỉnh.", [["Nhìn thấy tải", "Tổng hợp khối lượng theo ngày, theo giờ"], ["Phát hiện chênh lệch", "AI chỉ ra chỗ quá tải và chỗ còn trống"], ["Duyệt điều phối", "Duyệt đề xuất là Gantt tự cập nhật"]], "Buổi họp phân công rút từ 1 tiếng xuống 15 phút."],
+      ["Agent và con người cùng làm", "Giao cả task cho AI.", "Những việc như viết test case hay soát mâu thuẫn trong đặc tả thì giao cho AI, con người duyệt kết quả.", [["Giao cho AI", "Đặt AI làm người phụ trách task"], ["Nộp kết quả", "Đính kèm bản nháp test, báo cáo khác biệt"], ["Người duyệt", "Duyệt để hoàn tất, hoặc trả lại"]], "Trên Gantt, task của người và AI nằm cạnh nhau."],
+    ],
+    fr: [
+      ["Projets clients au forfait", "Du besoin à la livraison, sur le même écran que votre client.", "Le WBS du devis devient votre plan de livraison. Quand le périmètre change, l'impact et le retard se lisent en chiffres.", [["Intégrer le besoin", "L'IA rédige les tâches à partir des e-mails et comptes rendus"], ["S'accorder sur le Gantt", "Les revues client deviennent des jalons"], ["Rendre compte chaque semaine", "L'IA rédige le rapport, le chef de projet le relit et l'envoie"]], "« Prépare-moi le rapport de la semaine prochaine » — et votre vendredi soir redevient libre."],
+      ["Validation design en agence", "Tous les allers-retours de maquettes au même endroit.", "Maquettes, tableaux blancs et fichiers .pen vivent sur la tâche. Le client ne reçoit qu'un lien.", [["Publier la maquette", "Versionnez le HTML de Claude Code tel quel"], ["Revue client", "Consultation via un lien à durée limitée, retours transformés en tâches"], ["Archiver la version finale", "Regroupée sur le tableau de design du projet"]], "Fini de deviner quelle pièce jointe est « la dernière »."],
+      ["Backlog de la DSI", "Des demandes qui ne se perdent plus.", "Classez les demandes par service et suivez qualité et bugs au même endroit.", [["Recevoir les demandes", "L'IA crée les tickets depuis un formulaire ou le chat"], ["Prioriser", "Charge et échéances visibles dans la vue d'ensemble"], ["Boucler", "Le demandeur est prévenu automatiquement"]], "Qui a quoi sur son bureau ? La vue d'ensemble vous le dit."],
+      ["Ressources multi-projets", "Qui est disponible, quand, et combien.", "Visualisez la charge de chacun sur tous les projets. L'IA repère les surcharges et propose des ajustements.", [["Voir la charge", "Charge cumulée par jour et par heure"], ["Repérer les déséquilibres", "L'IA signale surcharges et disponibilités"], ["Valider la réaffectation", "Les changements validés passent dans le Gantt"]], "Les réunions d'affectation sont passées d'une heure à 15 minutes."],
+      ["Agents et humains ensemble", "Confiez aussi des tâches à l'IA.", "Déléguez à l'IA la rédaction des cas de test ou la recherche d'incohérences dans les spécifications, et faites relire le résultat par un humain.", [["Assigner à l'IA", "Désignez l'IA comme responsable de la tâche"], ["Livrer", "Brouillons de tests et rapports d'écarts en pièce jointe"], ["Relecture humaine", "Validez pour clore, ou renvoyez"]], "Sur le Gantt, humains et IA travaillent côte à côte."],
+    ],
+    id: [
+      ["Pengembangan proyek klien", "Dari kebutuhan sampai serah terima, di layar yang sama dengan klien.", "WBS saat penawaran langsung dipakai untuk memantau progres. Saat kebutuhan berubah, dampak dan keterlambatannya terlihat dalam angka.", [["Masukkan kebutuhan", "AI menyusun draf tugas dari email dan notulen klien"], ["Sepakati di Gantt", "Jadikan review klien sebagai milestone"], ["Laporan mingguan", "AI menyusun laporan, PM memeriksa lalu mengirim"]], "“Tolong siapkan draf laporan minggu depan” — Jumat sore Anda kembali lega."],
+      ["Review desain di agensi", "Semua putaran mockup di satu tempat.", "Mockup, papan tulis, dan file .pen tersimpan di tugas. Klien cukup menerima tautan.", [["Publikasikan mockup", "Kelola versi HTML dari Claude Code apa adanya"], ["Review klien", "Dilihat lewat tautan berbatas waktu, masukan jadi tugas"], ["Arsipkan versi final", "Terkumpul di papan desain proyek"]], "Tak perlu lagi menebak lampiran email mana yang “terbaru”."],
+      ["Backlog IT internal", "Permintaan tak lagi tenggelam.", "Kelompokkan permintaan per departemen, pantau kualitas dan bug di tempat yang sama.", [["Terima permintaan", "AI membuat tiket dari formulir atau chat"], ["Tentukan prioritas", "Lihat beban kerja dan tenggat di ringkasan"], ["Laporkan selesai", "Peminta diberi tahu otomatis"]], "Siapa sedang mengerjakan apa? Buka ringkasan, langsung tahu."],
+      ["Alokasi sumber daya lintas proyek", "Siapa yang longgar, kapan, dan seberapa banyak.", "Lihat beban kerja tiap anggota di semua proyek. AI mendeteksi beban berlebih dan mengusulkan penyesuaian.", [["Lihat beban", "Total beban kerja per hari dan per jam"], ["Deteksi ketimpangan", "AI menandai yang kelebihan dan yang masih longgar"], ["Setujui realokasi", "Usulan yang disetujui langsung masuk ke Gantt"]], "Rapat pembagian tugas dari 1 jam jadi 15 menit."],
+      ["Agen dan manusia bekerja sama", "Beri AI tugasnya sendiri.", "Serahkan pekerjaan seperti menyusun test case atau memeriksa kontradiksi spesifikasi ke AI, lalu manusia meninjau hasilnya.", [["Tugaskan ke AI", "Jadikan AI sebagai penanggung jawab tugas"], ["Serahkan hasil", "Lampirkan draf tes dan laporan perbedaan"], ["Review manusia", "Setujui untuk menyelesaikan, atau kembalikan"]], "Di Gantt, tugas manusia dan AI berjajar berdampingan."],
+    ],
+  };
+
+  const I18N = {
+    zh: {
+      "meta.title": "Proyubi — AI 原生的项目管理",
+      "nav.features": "功能", "nav.ai": "AI 集成", "nav.scenes": "使用场景", "nav.pricing": "价格", "nav.faq": "常见问题", "nav.login": "登录", "nav.cta": "免费开始",
+      "hero.eyebrow": "AI 原生的项目管理",
+      "hero.title": "人与 AI，<br />在同一张甘特图上推进项目。",
+      "hero.lead": "WBS、甘特图、全局概览合而为一。在 Claude 或 ChatGPT 里说一句“把这个拆成任务”，从提案、审批到落地，全部交给 Proyubi。",
+      "hero.cta1": "免费开始", "hero.cta2": "查看功能", "hero.note": "无需信用卡 · 5 分钟邀请团队",
+      "app.overview": "概览", "app.calendar": "日历", "app.projects": "项目", "app.quality": "质量・缺陷", "app.resources": "资源",
+      "proj.a": "订单管理改版", "proj.b": "会员 App v2", "proj.c": "落地页制作（春季）",
+      "app.gantt": "甘特图", "app.d": "日", "app.w": "周", "app.m": "月", "app.task": "任务",
+      "t.req": "需求定义", "t.screens": "确定页面清单", "t.design": "设计", "t.api": "API 设计", "t.testDraft": "测试用例草案", "t.impl": "开发", "t.orderList": "订单列表页", "t.review": "◆ 客户评审",
+      "av.1": "张", "av.2": "李", "av.3": "王",
+      "f1.tag": "AI 提案", "f1.time": "刚刚", "f1.msg": "“API 设计”延迟 2 天。是否将开发开始日顺延到 13 日？", "f1.later": "稍后", "f1.ok": "批准并应用",
+      "f2.label": "本周延迟任务", "f2.unit": "件 · 较上周 −2",
+      "feat.eyebrow": "功能", "feat.title": "和 AI 一起管理项目。", "feat.lead": "AI 不该只待在聊天框里。Proyubi 把 AI 带进团队真正工作的地方——WBS 和甘特图。",
+      "c1.eyebrow": "概览 · OVERVIEW", "c1.title": "哪个项目延期，<br />打开就知道。", "c1.lead": "跨项目自动找出逾期、进度落后和未分配的任务，不用再逐个打开项目检查。",
+      "c1.hl": "全局视图 / 我的视图", "c1.hlDesc": "管理者看全部项目的风险，成员看自己今天要做的事。默认视图随角色自动切换。",
+      "c1.p1": "依赖阻塞、未分配均由服务端判定", "c1.p2": "从风险行一键跳转到甘特图",
+      "ov.title": "概览", "ov.all": "全局", "ov.me": "我的视图",
+      "k.active": "进行中项目", "k.lateProj": "延期项目", "k.lateTask": "延期任务", "k.week": "本周到期",
+      "r.overdue": "已逾期", "r.behind": "进度落后", "r.unassigned": "未分配", "r.blocked": "等待依赖",
+      "r1.name": "API 设计 · 订单管理改版", "r2.name": "支付对接 · 会员 App v2", "r3.name": "OGP 图片 · 落地页制作（春季）", "r4.name": "订单列表页 · 订单管理改版",
+      "w.plus2": "+2 天", "w.in3": "还剩 3 天", "w.in5": "还剩 5 天", "w.today": "今天",
+      "c2.eyebrow": "WBS · 甘特图", "c2.title": "WBS 和甘特图，<br />在同一个画面。", "c2.lead": "客户 → 项目 → 任务的层级直接呈现在甘特图上。拖动调整日程，后续任务会按依赖关系和节假日自动顺延。",
+      "c2.hl": "依赖关系 · 里程碑 · 节假日日历", "c2.hlDesc": "内置日本法定节假日和公司休息日，也支持按小时计工时。",
+      "c2.p1": "每个任务的评论与变更记录", "c2.p2": "从思维导图直接展开为 WBS",
+      "g2.progress": "进度 64%", "dw.mon": "一", "dw.tue": "二", "dw.wed": "三", "dw.thu": "四", "dw.fri": "五",
+      "t2.auth": "认证", "t2.login": "登录页", "t2.sns": "社交登录", "t2.pay": "支付", "t2.stripe": "Stripe 对接", "t2.receipt": "收据邮件", "t2.release": "◆ 发布",
+      "c3.eyebrow": "AI 助手 · MCP", "c3.title": "一句“拆成任务”，<br />直接落进 WBS。", "c3.lead": "粘贴客户邮件或会议纪要，AI 就会生成任务草案。所有写入都以提案形式送达，经人审批后才会生效。",
+      "c3.hl": "提案 → 审批 → 执行，全程留审计日志", "c3.hlDesc": "AI 的每一次改动都必须经过人工审批，谁批准了什么都可追溯。",
+      "c3.p1": "在 Claude / ChatGPT 里粘贴一个 URL 即可接入", "c3.p2": "每周自动起草“面向客户的进度周报”",
+      "ai.mode": "提案模式", "ai.user": "把客户这封邮件里的需求拆成任务，放进订单管理改版", "ai.bot": "已从邮件中提取 3 个任务，与现有的“API 设计”存在依赖关系。",
+      "ai.r1": "订单 CSV 批量导入", "ai.r2": "发货状态 Webhook", "ai.r3": "权限：新增销售角色", "u.d3": "3 天", "u.d2": "2 天", "u.d1": "1 天", "ai.edit": "修改", "ai.approve": "批准并加入 WBS",
+      "c4.eyebrow": "原型 · 设计看板", "c4.title": "效果图，<br />用自己的域名发给客户。", "c4.lead": "Claude Code、Codex 生成的 HTML 原型可以挂在项目或任务上发布，发给客户的只有一条自有域名的分享链接。",
+      "c4.hl": "可设期限、可随时停用的分享链接", "c4.hlDesc": "每个版本都留有记录，链接一键重发或停用。",
+      "c4.p1": "白板和 .pen 设计稿按项目归档", "c4.p2": "把 Google Drive 资料关联到甘特图",
+      "mk.caption": "订单列表 v3 · 10/22 更新", "mk.expire": "7 天后失效", "mk.views": "浏览 12",
+      "int.eyebrow": "沿用现有工具", "int.title": "让团队一步步<br />走向 AI 原生。", "int.lead": "不必重建工作方式。现在用的 Agent、代码、沟通工具和资料都保持原样，接入 Proyubi 就能用。",
+      "i1.t": "直接接入外部 Agent", "i1.d": "标配 MCP 服务器，在常用的 AI 里就能查询项目、添加任务、查看风险。",
+      "i2.t": "把代码和 CI 关联到任务", "i2.d": "提交和 PR 自动关联到任务，看着 CI 结果当场完成验收。",
+      "i3.t": "通知送到常看的地方", "i3.d": "到期提醒和待审批事项，推送到团队平时在看的渠道。",
+      "i4.t": "资料保持链接形态", "i4.d": "客户资料从 Drive 登记并可预览，Excel 格式的 WBS 可直接导入。",
+      "chip.mcp": "支持 MCP 的 Agent", "chip.mail": "邮件",
+      "sc.eyebrow": "使用场景", "sc.title": "各种项目，都能交给 Proyubi。", "sc.step": "步骤",
+      "pr.eyebrow": "价格", "pr.title": "从小处起步，<br />需要时也可私有部署。", "pr.lead": "云端版可以免费开始。如果公司规定不能使用云服务，也可以部署在自己的服务器上。",
+      "free.for": "适合个人或小团队试用", "free.note": "永久免费", "free.l1": "1 个团队 · 最多 3 个项目", "free.l2": "WBS · 甘特图 · 概览", "free.l3": "接入外部 Agent（MCP）", "free.btn": "免费开始",
+      "pro.badge": "推荐", "pro.for": "适合外包与制作团队正式使用", "pro.note": "/ 用户 · 月（定价调整中）",
+      "pro.l1": "项目和成员不限，支持多团队", "pro.l2": "内置 AI 助手（提案 · 审批）", "pro.l3": "原型分享 · 自有域名", "pro.l4": "自动起草进度周报", "pro.btn": "免费试用 Pro 14 天",
+      "self.name": "私有部署", "self.for": "适合不能使用云服务的组织", "self.price": "另行报价",
+      "self.l1": "部署到自有服务器 / 内网", "self.l2": "基于开源版扩展", "self.l3": "部署与运维支持", "self.btn": "联系咨询",
+      "faq.eyebrow": "FAQ", "faq.title": "常见问题",
+      "q1": "Proyubi 是 AI Agent 吗？", "a1": "不是。Proyubi 是项目管理的底座。AI 负责在 WBS 和甘特图上提出建议，做决定的是人。Claude、ChatGPT 等外部 Agent 也通过同一套“提案 → 审批”机制接入。",
+      "q2": "AI 会擅自修改任务吗？", "a2": "不会。AI 的所有写入都以提案形式送达，审批前不会生效。审批人和改动内容都会记录在审计日志里。",
+      "q3": "能从 Excel 的 WBS 迁移过来吗？", "a3": "可以。既能直接导入 Excel 格式的 WBS，也可以粘贴给 AI 生成任务草案。",
+      "q4": "可以给客户看画面吗？", "a4": "原型可以通过有期限的分享链接给客户查看。链接使用你自己的域名，随时可以停用。",
+      "q5": "可以部署在自己的服务器上吗？", "a5": "可以，使用私有部署版。它基于开源版，我们也提供部署和运维支持。",
+      "cta.title": "从今天起，和 AI 一起推进项目。", "cta.lead": "注册只需 1 分钟。导入现有的 WBS，马上就能开始。", "cta.btn1": "免费开始", "cta.btn2": "预约演示",
+      "ft.tag": "人与 AI 在同一张甘特图上协作的 AI 原生项目管理。", "ft.product": "产品", "ft.scenes": "使用场景", "ft.res": "资源",
+      "ft.overview": "概览", "ft.gantt": "WBS · 甘特图", "ft.ai": "AI 助手", "ft.mock": "原型分享", "ft.s1": "外包开发", "ft.s2": "设计制作公司", "ft.s3": "企业内部 IT", "ft.self": "私有部署",
+      "ft.help": "帮助中心", "ft.mcp": "MCP 接入指南", "ft.terms": "服务条款", "ft.privacy": "隐私政策",
+    },
+    en: {
+      "meta.title": "Proyubi — AI-native project management",
+      "nav.features": "Features", "nav.ai": "AI", "nav.scenes": "Use cases", "nav.pricing": "Pricing", "nav.faq": "FAQ", "nav.login": "Log in", "nav.cta": "Start free",
+      "hero.eyebrow": "AI-native project management",
+      "hero.title": "Humans and AI,<br />shipping on the same Gantt.",
+      "hero.lead": "WBS, Gantt and a portfolio overview in one place. Tell Claude or ChatGPT “turn this into tasks” — Proyubi handles the proposal, the approval and the update.",
+      "hero.cta1": "Start free", "hero.cta2": "See features", "hero.note": "No credit card · Invite your team in 5 minutes",
+      "app.overview": "Overview", "app.calendar": "Calendar", "app.projects": "Projects", "app.quality": "Quality & bugs", "app.resources": "Resources",
+      "proj.a": "Order system revamp", "proj.b": "Member app v2", "proj.c": "Spring landing page",
+      "app.gantt": "Gantt", "app.d": "Day", "app.w": "Week", "app.m": "Month", "app.task": "Task",
+      "t.req": "Requirements", "t.screens": "Finalize screen list", "t.design": "Design", "t.api": "API design", "t.testDraft": "Test case draft", "t.impl": "Build", "t.orderList": "Order list screen", "t.review": "◆ Client review",
+      "av.1": "S", "av.2": "T", "av.3": "K",
+      "f1.tag": "AI suggestion", "f1.time": "just now", "f1.msg": "“API design” is 2 days late. Push the build start to the 13th?", "f1.later": "Later", "f1.ok": "Approve & apply",
+      "f2.label": "Late tasks this week", "f2.unit": "tasks · −2 vs last week",
+      "feat.eyebrow": "Features", "feat.title": "Project management, with AI.", "feat.lead": "AI shouldn't live only in a chat window. Proyubi brings it to where your team actually works — the WBS and the Gantt.",
+      "c1.eyebrow": "Overview", "c1.title": "See what's slipping<br />the moment you log in.", "c1.lead": "Overdue, behind-schedule and unassigned work surfaces across every project — no more opening them one by one.",
+      "c1.hl": "Company view / My view", "c1.hlDesc": "Managers see risk across all projects; members see what's on their plate today. The default view follows each person's role.",
+      "c1.p1": "Dependency blocks and unassigned work detected server-side", "c1.p2": "Jump from any risk straight to the Gantt",
+      "ov.title": "Overview", "ov.all": "All", "ov.me": "Mine",
+      "k.active": "Active projects", "k.lateProj": "Late projects", "k.lateTask": "Late tasks", "k.week": "Due this week",
+      "r.overdue": "Overdue", "r.behind": "Behind", "r.unassigned": "Unassigned", "r.blocked": "Blocked",
+      "r1.name": "API design · Order system revamp", "r2.name": "Payments · Member app v2", "r3.name": "OGP image · Spring landing page", "r4.name": "Order list screen · Order system revamp",
+      "w.plus2": "+2 days", "w.in3": "3 days left", "w.in5": "5 days left", "w.today": "Today",
+      "c2.eyebrow": "WBS · Gantt", "c2.title": "Your WBS and Gantt,<br />on one screen.", "c2.lead": "Client → project → task, straight onto the Gantt. Drag a date and everything downstream follows, respecting dependencies and holidays.",
+      "c2.hl": "Dependencies · milestones · holiday calendars", "c2.hlDesc": "Japanese public holidays and your own days off are built in. Hour-level estimates supported.",
+      "c2.p1": "Comments and change history on every task", "c2.p2": "Expand a mind map straight into a WBS",
+      "g2.progress": "64% done", "dw.mon": "M", "dw.tue": "T", "dw.wed": "W", "dw.thu": "T", "dw.fri": "F",
+      "t2.auth": "Auth", "t2.login": "Login screen", "t2.sns": "Social login", "t2.pay": "Payments", "t2.stripe": "Stripe integration", "t2.receipt": "Receipt email", "t2.release": "◆ Release",
+      "c3.eyebrow": "AI assistant · MCP", "c3.title": "Say “make these tasks.”<br />They land in the WBS.", "c3.lead": "Paste a client email or meeting notes and AI drafts the tasks. Every write arrives as a proposal and changes nothing until a person approves it.",
+      "c3.hl": "Propose → approve → execute, fully audited", "c3.hlDesc": "Every AI change goes through human approval, and you can always trace who approved what.",
+      "c3.p1": "Connect Claude or ChatGPT by pasting a URL", "c3.p2": "Weekly client progress reports, drafted for you",
+      "ai.mode": "Proposal mode", "ai.user": "Turn the requirements in this client email into tasks under Order system revamp", "ai.bot": "I found 3 tasks in the email. They depend on the existing “API design” task.",
+      "ai.r1": "Bulk CSV order import", "ai.r2": "Shipping status webhook", "ai.r3": "Permissions: add Sales role", "u.d3": "3d", "u.d2": "2d", "u.d1": "1d", "ai.edit": "Edit", "ai.approve": "Approve & add to WBS",
+      "c4.eyebrow": "Mockups · design board", "c4.title": "Share mockups<br />on your own domain.", "c4.lead": "Publish HTML mockups made by Claude Code or Codex against a project or task. Clients only ever get a share link on your domain.",
+      "c4.hl": "Share links that expire and can be revoked", "c4.hlDesc": "Every version is kept. Reissue or revoke a link in one click.",
+      "c4.p1": "Whiteboards and .pen designs stored per project", "c4.p2": "Link Google Drive files to the Gantt",
+      "mk.caption": "Order list v3 · updated Oct 22", "mk.expire": "Expires in 7 days", "mk.views": "12 views",
+      "int.eyebrow": "Keep your tools", "int.title": "Make your team AI-native,<br />one step at a time.", "int.lead": "No need to rebuild how you work. Keep your agents, code, chat and docs — just connect them to Proyubi.",
+      "i1.t": "Plug in the agents you already use", "i1.d": "A built-in MCP server lets your usual AI query projects, add tasks and check risks.",
+      "i2.t": "Link code and CI to tasks", "i2.d": "Commits and pull requests attach to tasks automatically, so you can sign off while looking at CI results.",
+      "i3.t": "Notifications where people look", "i3.d": "Deadline alerts and pending approvals go to the channels your team already watches.",
+      "i4.t": "Docs stay as links", "i4.d": "Register client docs from Drive with previews, and import Excel WBS files as they are.",
+      "chip.mcp": "Any MCP agent", "chip.mail": "Email",
+      "sc.eyebrow": "Use cases", "sc.title": "Whatever the project, Proyubi fits.", "sc.step": "STEP",
+      "pr.eyebrow": "Pricing", "pr.title": "Start small.<br />Self-host when you need to.", "pr.lead": "The cloud edition is free to start. If your policy rules out the cloud, run it on your own servers.",
+      "free.for": "For individuals and small teams trying it out", "free.note": "free forever", "free.l1": "1 team · up to 3 projects", "free.l2": "WBS · Gantt · Overview", "free.l3": "External agents (MCP)", "free.btn": "Start free",
+      "pro.badge": "Recommended", "pro.for": "For agencies and dev shops running real work", "pro.note": "/ user · month (pricing TBD)",
+      "pro.l1": "Unlimited projects and members, multiple teams", "pro.l2": "Built-in AI assistant (propose · approve)", "pro.l3": "Mockup sharing on your own domain", "pro.l4": "Auto-drafted weekly reports", "pro.btn": "Try Pro free for 14 days",
+      "self.name": "Self-hosted", "self.for": "For organizations that can't use the cloud", "self.price": "Custom quote",
+      "self.l1": "On your own servers or private network", "self.l2": "Built on the open-source edition", "self.l3": "Setup and operations support", "self.btn": "Talk to us",
+      "faq.eyebrow": "FAQ", "faq.title": "Frequently asked questions",
+      "q1": "Is Proyubi an AI agent?", "a1": "No. Proyubi is the foundation for managing projects. AI makes suggestions on top of your WBS and Gantt — people make the decisions. External agents like Claude and ChatGPT connect through the same propose → approve flow.",
+      "q2": "Can AI change tasks on its own?", "a2": "No. Everything AI writes arrives as a proposal and takes effect only after approval. The approver and the change are recorded in the audit log.",
+      "q3": "Can we migrate from an Excel WBS?", "a3": "Yes. Import your Excel WBS directly, or paste it to the AI to turn it into draft tasks.",
+      "q4": "Can clients see our screens?", "a4": "You can share mockups with clients through expiring links on your own domain, and revoke them at any time.",
+      "q5": "Can we run it on our own servers?", "a5": "Yes, with the self-hosted edition. It's built on the open-source edition, and we support setup and operations.",
+      "cta.title": "Start running projects with AI today.", "cta.lead": "Sign up in a minute. Import your current WBS and you're ready to go.", "cta.btn1": "Start free", "cta.btn2": "Book a demo",
+      "ft.tag": "AI-native project management where people and AI share one Gantt.", "ft.product": "Product", "ft.scenes": "Use cases", "ft.res": "Resources",
+      "ft.overview": "Overview", "ft.gantt": "WBS · Gantt", "ft.ai": "AI assistant", "ft.mock": "Mockup sharing", "ft.s1": "Client development", "ft.s2": "Design agencies", "ft.s3": "Internal IT", "ft.self": "Self-hosting",
+      "ft.help": "Help center", "ft.mcp": "MCP setup guide", "ft.terms": "Terms", "ft.privacy": "Privacy",
+    },
+    es: {
+      "meta.title": "Proyubi — Gestión de proyectos nativa de IA",
+      "nav.features": "Funciones", "nav.ai": "IA", "nav.scenes": "Casos de uso", "nav.pricing": "Precios", "nav.faq": "FAQ", "nav.login": "Iniciar sesión", "nav.cta": "Empezar gratis",
+      "hero.eyebrow": "Gestión de proyectos nativa de IA",
+      "hero.title": "Personas e IA,<br />en el mismo Gantt.",
+      "hero.lead": "WBS, Gantt y una vista global en un solo lugar. Pide a Claude o ChatGPT «convierte esto en tareas» y Proyubi se encarga de la propuesta, la aprobación y la actualización.",
+      "hero.cta1": "Empezar gratis", "hero.cta2": "Ver funciones", "hero.note": "Sin tarjeta de crédito · Invita a tu equipo en 5 minutos",
+      "app.overview": "Resumen", "app.calendar": "Calendario", "app.projects": "Proyectos", "app.quality": "Calidad y errores", "app.resources": "Recursos",
+      "proj.a": "Renovación de pedidos", "proj.b": "App de socios v2", "proj.c": "Landing de primavera",
+      "app.gantt": "Gantt", "app.d": "Día", "app.w": "Semana", "app.m": "Mes", "app.task": "Tarea",
+      "t.req": "Requisitos", "t.screens": "Cerrar lista de pantallas", "t.design": "Diseño", "t.api": "Diseño de API", "t.testDraft": "Borrador de pruebas", "t.impl": "Desarrollo", "t.orderList": "Pantalla de pedidos", "t.review": "◆ Revisión del cliente",
+      "av.1": "M", "av.2": "L", "av.3": "C",
+      "f1.tag": "Sugerencia de IA", "f1.time": "ahora mismo", "f1.msg": "«Diseño de API» va 2 días tarde. ¿Movemos el inicio del desarrollo al día 13?", "f1.later": "Luego", "f1.ok": "Aprobar y aplicar",
+      "f2.label": "Tareas atrasadas esta semana", "f2.unit": "tareas · −2 vs. semana pasada",
+      "feat.eyebrow": "Funciones", "feat.title": "Gestiona proyectos junto a la IA.", "feat.lead": "La IA no debería quedarse en una ventana de chat. Proyubi la lleva adonde tu equipo trabaja de verdad: el WBS y el Gantt.",
+      "c1.eyebrow": "Resumen", "c1.title": "Sabrás qué se retrasa<br />nada más entrar.", "c1.lead": "Detecta en todos los proyectos lo vencido, lo atrasado y lo que no tiene responsable. Ya no hace falta abrirlos uno a uno.",
+      "c1.hl": "Vista global / Mi vista", "c1.hlDesc": "Los responsables ven el riesgo de todos los proyectos; cada miembro, lo que tiene para hoy. La vista por defecto se adapta al rol.",
+      "c1.p1": "Bloqueos por dependencia y tareas sin asignar, calculados en el servidor", "c1.p2": "De cada riesgo al Gantt con un clic",
+      "ov.title": "Resumen", "ov.all": "Todo", "ov.me": "Mi vista",
+      "k.active": "Proyectos activos", "k.lateProj": "Proyectos atrasados", "k.lateTask": "Tareas atrasadas", "k.week": "Vencen esta semana",
+      "r.overdue": "Vencida", "r.behind": "Atrasada", "r.unassigned": "Sin asignar", "r.blocked": "Bloqueada",
+      "r1.name": "Diseño de API · Renovación de pedidos", "r2.name": "Pagos · App de socios v2", "r3.name": "Imagen OGP · Landing de primavera", "r4.name": "Pantalla de pedidos · Renovación de pedidos",
+      "w.plus2": "+2 días", "w.in3": "faltan 3 días", "w.in5": "faltan 5 días", "w.today": "Hoy",
+      "c2.eyebrow": "WBS · Gantt", "c2.title": "Tu WBS y tu Gantt,<br />en una sola pantalla.", "c2.lead": "La jerarquía cliente → proyecto → tarea, directamente en el Gantt. Arrastra una fecha y todo lo que depende de ella se ajusta, respetando dependencias y festivos.",
+      "c2.hl": "Dependencias · hitos · calendarios de festivos", "c2.hlDesc": "Incluye los festivos de Japón y tus días no laborables. Admite estimaciones por horas.",
+      "c2.p1": "Comentarios e historial de cambios en cada tarea", "c2.p2": "Convierte un mapa mental en WBS",
+      "g2.progress": "64 % completado", "dw.mon": "L", "dw.tue": "M", "dw.wed": "X", "dw.thu": "J", "dw.fri": "V",
+      "t2.auth": "Autenticación", "t2.login": "Pantalla de login", "t2.sns": "Login social", "t2.pay": "Pagos", "t2.stripe": "Integración con Stripe", "t2.receipt": "Email de recibo", "t2.release": "◆ Lanzamiento",
+      "c3.eyebrow": "Asistente de IA · MCP", "c3.title": "Pide tareas<br />y llegan al WBS.", "c3.lead": "Pega el email de un cliente o unas actas y la IA redacta las tareas. Cada cambio llega como propuesta y no se aplica hasta que una persona lo aprueba.",
+      "c3.hl": "Proponer → aprobar → ejecutar, con auditoría completa", "c3.hlDesc": "Todo cambio de la IA pasa por aprobación humana y siempre puedes ver quién aprobó qué.",
+      "c3.p1": "Conecta Claude o ChatGPT pegando una URL", "c3.p2": "Informe semanal de avance para el cliente, redactado automáticamente",
+      "ai.mode": "Modo propuesta", "ai.user": "Convierte los requisitos de este email del cliente en tareas de Renovación de pedidos", "ai.bot": "He encontrado 3 tareas en el email. Dependen de la tarea existente «Diseño de API».",
+      "ai.r1": "Importación masiva de pedidos por CSV", "ai.r2": "Webhook de estado de envío", "ai.r3": "Permisos: añadir rol de ventas", "u.d3": "3 d", "u.d2": "2 d", "u.d1": "1 d", "ai.edit": "Editar", "ai.approve": "Aprobar y añadir al WBS",
+      "c4.eyebrow": "Mockups · tablero de diseño", "c4.title": "Comparte mockups<br />con tu propio dominio.", "c4.lead": "Publica en un proyecto o una tarea los mockups HTML creados con Claude Code o Codex. El cliente solo recibe un enlace con tu dominio.",
+      "c4.hl": "Enlaces con caducidad que puedes revocar", "c4.hlDesc": "Se guarda cada versión. Reemite o revoca un enlace con un clic.",
+      "c4.p1": "Pizarras y diseños .pen guardados por proyecto", "c4.p2": "Vincula archivos de Google Drive al Gantt",
+      "mk.caption": "Pedidos v3 · actualizado el 22/10", "mk.expire": "Caduca en 7 días", "mk.views": "12 vistas",
+      "int.eyebrow": "Con tus herramientas de siempre", "int.title": "Haz tu equipo nativo de IA,<br />paso a paso.", "int.lead": "No hace falta rehacer tu forma de trabajar. Conserva tus agentes, tu código, tus canales y tus documentos: solo conéctalos a Proyubi.",
+      "i1.t": "Conecta los agentes que ya usas", "i1.d": "Un servidor MCP integrado permite a tu IA habitual consultar proyectos, añadir tareas y revisar riesgos.",
+      "i2.t": "Código y CI vinculados a tareas", "i2.d": "Commits y pull requests se vinculan solos a las tareas, para aprobar mirando los resultados de CI.",
+      "i3.t": "Avisos donde tu equipo mira", "i3.d": "Alertas de vencimiento y aprobaciones pendientes, en los canales que el equipo ya usa.",
+      "i4.t": "Los documentos siguen siendo enlaces", "i4.d": "Registra documentos del cliente desde Drive con vista previa e importa tu WBS de Excel tal cual.",
+      "chip.mcp": "Cualquier agente MCP", "chip.mail": "Email",
+      "sc.eyebrow": "Casos de uso", "sc.title": "Sea cual sea el proyecto, Proyubi encaja.", "sc.step": "PASO",
+      "pr.eyebrow": "Precios", "pr.title": "Empieza en pequeño.<br />Autoaloja si hace falta.", "pr.lead": "La versión en la nube es gratis para empezar. Si tu política no permite la nube, puedes usarlo en tus propios servidores.",
+      "free.for": "Para probarlo solo o con un equipo pequeño", "free.note": "gratis para siempre", "free.l1": "1 equipo · hasta 3 proyectos", "free.l2": "WBS · Gantt · Resumen", "free.l3": "Agentes externos (MCP)", "free.btn": "Empezar gratis",
+      "pro.badge": "Recomendado", "pro.for": "Para agencias y estudios de desarrollo en producción", "pro.note": "/ usuario · mes (precio por definir)",
+      "pro.l1": "Proyectos y miembros ilimitados, varios equipos", "pro.l2": "Asistente de IA integrado (proponer · aprobar)", "pro.l3": "Mockups compartidos con tu dominio", "pro.l4": "Informes semanales redactados automáticamente", "pro.btn": "Prueba Pro gratis 14 días",
+      "self.name": "Autoalojado", "self.for": "Para organizaciones que no pueden usar la nube", "self.price": "A medida",
+      "self.l1": "En tus servidores o red privada", "self.l2": "Basado en la edición de código abierto", "self.l3": "Soporte de instalación y operación", "self.btn": "Contactar",
+      "faq.eyebrow": "FAQ", "faq.title": "Preguntas frecuentes",
+      "q1": "¿Proyubi es un agente de IA?", "a1": "No. Proyubi es la base para gestionar proyectos. La IA propone sobre tu WBS y tu Gantt; las decisiones las toman las personas. Agentes externos como Claude y ChatGPT se conectan con el mismo flujo de proponer → aprobar.",
+      "q2": "¿Puede la IA modificar tareas por su cuenta?", "a2": "No. Todo lo que escribe la IA llega como propuesta y solo se aplica tras la aprobación. Quién aprobó y qué cambió queda en el registro de auditoría.",
+      "q3": "¿Podemos migrar desde un WBS en Excel?", "a3": "Sí. Importa tu WBS de Excel directamente o pégalo en la IA para convertirlo en borradores de tareas.",
+      "q4": "¿Pueden los clientes ver las pantallas?", "a4": "Puedes compartir mockups con clientes mediante enlaces con caducidad en tu propio dominio y revocarlos cuando quieras.",
+      "q5": "¿Podemos usarlo en nuestros servidores?", "a5": "Sí, con la edición autoalojada. Está basada en la edición de código abierto y damos soporte de instalación y operación.",
+      "cta.title": "Empieza hoy a gestionar proyectos con IA.", "cta.lead": "Regístrate en un minuto. Importa tu WBS actual y listo.", "cta.btn1": "Empezar gratis", "cta.btn2": "Reservar una demo",
+      "ft.tag": "Gestión de proyectos nativa de IA: personas e IA en el mismo Gantt.", "ft.product": "Producto", "ft.scenes": "Casos de uso", "ft.res": "Recursos",
+      "ft.overview": "Resumen", "ft.gantt": "WBS · Gantt", "ft.ai": "Asistente de IA", "ft.mock": "Mockups compartidos", "ft.s1": "Desarrollo para clientes", "ft.s2": "Agencias de diseño", "ft.s3": "TI interna", "ft.self": "Autoalojado",
+      "ft.help": "Centro de ayuda", "ft.mcp": "Guía de conexión MCP", "ft.terms": "Términos", "ft.privacy": "Privacidad",
+    },
+    vi: {
+      "meta.title": "Proyubi — Quản lý dự án thuần AI",
+      "nav.features": "Tính năng", "nav.ai": "AI", "nav.scenes": "Tình huống", "nav.pricing": "Bảng giá", "nav.faq": "FAQ", "nav.login": "Đăng nhập", "nav.cta": "Dùng miễn phí",
+      "hero.eyebrow": "Quản lý dự án thuần AI",
+      "hero.title": "Con người và AI,<br />chung một biểu đồ Gantt.",
+      "hero.lead": "WBS, Gantt và bảng tổng quan gộp làm một. Chỉ cần nói với Claude hay ChatGPT “chuyển cái này thành task”, Proyubi lo từ đề xuất, phê duyệt đến cập nhật.",
+      "hero.cta1": "Dùng miễn phí", "hero.cta2": "Xem tính năng", "hero.note": "Không cần thẻ tín dụng · Mời cả nhóm trong 5 phút",
+      "app.overview": "Tổng quan", "app.calendar": "Lịch", "app.projects": "Dự án", "app.quality": "Chất lượng & lỗi", "app.resources": "Nguồn lực",
+      "proj.a": "Làm mới hệ thống đơn hàng", "proj.b": "App hội viên v2", "proj.c": "Landing page mùa xuân",
+      "app.gantt": "Gantt", "app.d": "Ngày", "app.w": "Tuần", "app.m": "Tháng", "app.task": "Công việc",
+      "t.req": "Xác định yêu cầu", "t.screens": "Chốt danh sách màn hình", "t.design": "Thiết kế", "t.api": "Thiết kế API", "t.testDraft": "Bản nháp test case", "t.impl": "Phát triển", "t.orderList": "Màn hình danh sách đơn", "t.review": "◆ Khách hàng duyệt",
+      "av.1": "N", "av.2": "T", "av.3": "H",
+      "f1.tag": "AI đề xuất", "f1.time": "vừa xong", "f1.msg": "“Thiết kế API” đang trễ 2 ngày. Dời ngày bắt đầu phát triển sang ngày 13?", "f1.later": "Để sau", "f1.ok": "Duyệt và áp dụng",
+      "f2.label": "Task trễ tuần này", "f2.unit": "task · −2 so với tuần trước",
+      "feat.eyebrow": "Tính năng", "feat.title": "Quản lý dự án cùng AI.", "feat.lead": "AI không nên chỉ nằm trong khung chat. Proyubi đưa AI vào đúng nơi đội ngũ làm việc — WBS và biểu đồ Gantt.",
+      "c1.eyebrow": "Tổng quan", "c1.title": "Dự án nào đang trễ,<br />mở ra là biết ngay.", "c1.lead": "Tự động tìm các task quá hạn, chậm tiến độ và chưa có người phụ trách trên mọi dự án. Không cần mở từng dự án để kiểm tra.",
+      "c1.hl": "Góc nhìn toàn công ty / Của tôi", "c1.hlDesc": "Quản lý thấy rủi ro của mọi dự án, thành viên thấy việc cần làm hôm nay. Góc nhìn mặc định thay đổi theo vai trò.",
+      "c1.p1": "Task bị chặn và task chưa giao được xác định phía máy chủ", "c1.p2": "Từ dòng rủi ro sang Gantt chỉ với một cú nhấp",
+      "ov.title": "Tổng quan", "ov.all": "Toàn bộ", "ov.me": "Của tôi",
+      "k.active": "Dự án đang chạy", "k.lateProj": "Dự án trễ", "k.lateTask": "Task trễ", "k.week": "Đến hạn tuần này",
+      "r.overdue": "Quá hạn", "r.behind": "Chậm tiến độ", "r.unassigned": "Chưa giao", "r.blocked": "Chờ phụ thuộc",
+      "r1.name": "Thiết kế API · Làm mới hệ thống đơn hàng", "r2.name": "Thanh toán · App hội viên v2", "r3.name": "Ảnh OGP · Landing page mùa xuân", "r4.name": "Màn hình danh sách đơn · Làm mới hệ thống đơn hàng",
+      "w.plus2": "+2 ngày", "w.in3": "còn 3 ngày", "w.in5": "còn 5 ngày", "w.today": "Hôm nay",
+      "c2.eyebrow": "WBS · Gantt", "c2.title": "WBS và Gantt<br />trên cùng một màn hình.", "c2.lead": "Cấp bậc khách hàng → dự án → task hiển thị thẳng trên Gantt. Kéo để đổi lịch, các task phía sau tự dịch theo quan hệ phụ thuộc và ngày nghỉ.",
+      "c2.hl": "Phụ thuộc · mốc · lịch ngày nghỉ", "c2.hlDesc": "Có sẵn ngày lễ Nhật Bản và ngày nghỉ riêng của công ty. Hỗ trợ ước lượng theo giờ.",
+      "c2.p1": "Bình luận và lịch sử thay đổi cho từng task", "c2.p2": "Triển khai sơ đồ tư duy thành WBS",
+      "g2.progress": "Hoàn thành 64%", "dw.mon": "T2", "dw.tue": "T3", "dw.wed": "T4", "dw.thu": "T5", "dw.fri": "T6",
+      "t2.auth": "Xác thực", "t2.login": "Màn hình đăng nhập", "t2.sns": "Đăng nhập MXH", "t2.pay": "Thanh toán", "t2.stripe": "Tích hợp Stripe", "t2.receipt": "Email biên nhận", "t2.release": "◆ Phát hành",
+      "c3.eyebrow": "Trợ lý AI · MCP", "c3.title": "Nói “tạo task”,<br />là có ngay trong WBS.", "c3.lead": "Dán email của khách hay biên bản họp, AI sẽ soạn bản nháp task. Mọi thay đổi đều đến dưới dạng đề xuất và chỉ có hiệu lực khi có người duyệt.",
+      "c3.hl": "Đề xuất → duyệt → thực thi, có nhật ký kiểm toán", "c3.hlDesc": "Mọi thay đổi do AI thực hiện đều phải qua người duyệt. Ai đã duyệt gì đều truy vết được.",
+      "c3.p1": "Kết nối Claude / ChatGPT chỉ bằng cách dán một URL", "c3.p2": "Tự động soạn báo cáo tiến độ hằng tuần gửi khách hàng",
+      "ai.mode": "Chế độ đề xuất", "ai.user": "Chuyển yêu cầu trong email này của khách thành task, đưa vào dự án Làm mới hệ thống đơn hàng", "ai.bot": "Đã tách được 3 task từ email. Chúng phụ thuộc vào task “Thiết kế API” hiện có.",
+      "ai.r1": "Nhập đơn hàng hàng loạt từ CSV", "ai.r2": "Webhook trạng thái giao hàng", "ai.r3": "Phân quyền: thêm vai trò Kinh doanh", "u.d3": "3 ngày", "u.d2": "2 ngày", "u.d1": "1 ngày", "ai.edit": "Sửa", "ai.approve": "Duyệt và thêm vào WBS",
+      "c4.eyebrow": "Mockup · bảng thiết kế", "c4.title": "Gửi mockup cho khách<br />bằng tên miền của bạn.", "c4.lead": "Đăng các mockup HTML do Claude Code hay Codex tạo ra, gắn vào dự án hoặc task. Khách hàng chỉ nhận một đường link trên tên miền của bạn.",
+      "c4.hl": "Link chia sẻ có thời hạn, thu hồi được", "c4.hlDesc": "Lưu lại từng phiên bản. Cấp lại hoặc thu hồi link chỉ với một cú nhấp.",
+      "c4.p1": "Lưu bảng trắng và thiết kế .pen theo từng dự án", "c4.p2": "Gắn tài liệu Google Drive vào Gantt",
+      "mk.caption": "Danh sách đơn v3 · cập nhật 22/10", "mk.expire": "Hết hạn sau 7 ngày", "mk.views": "12 lượt xem",
+      "int.eyebrow": "Giữ nguyên công cụ", "int.title": "Đưa đội ngũ lên AI,<br />từng bước một.", "int.lead": "Không cần làm lại cách làm việc. Giữ nguyên agent, mã nguồn, kênh liên lạc và tài liệu — chỉ cần kết nối với Proyubi.",
+      "i1.t": "Kết nối agent bạn đang dùng", "i1.d": "Máy chủ MCP có sẵn giúp AI quen thuộc của bạn tra cứu dự án, thêm task và kiểm tra rủi ro.",
+      "i2.t": "Gắn mã nguồn và CI vào task", "i2.d": "Commit và pull request tự gắn vào task, nghiệm thu ngay khi xem kết quả CI.",
+      "i3.t": "Thông báo đến đúng nơi", "i3.d": "Nhắc hạn và yêu cầu chờ duyệt được gửi đến kênh đội ngũ vẫn xem hằng ngày.",
+      "i4.t": "Tài liệu vẫn là đường link", "i4.d": "Đăng ký tài liệu khách hàng từ Drive kèm xem trước, nhập thẳng WBS từ Excel.",
+      "chip.mcp": "Agent hỗ trợ MCP", "chip.mail": "Email",
+      "sc.eyebrow": "Tình huống sử dụng", "sc.title": "Dự án nào cũng giao được cho Proyubi.", "sc.step": "BƯỚC",
+      "pr.eyebrow": "Bảng giá", "pr.title": "Bắt đầu nhỏ,<br />cần thì tự triển khai.", "pr.lead": "Bản cloud dùng miễn phí để bắt đầu. Nếu quy định công ty không cho dùng cloud, bạn có thể chạy trên máy chủ riêng.",
+      "free.for": "Cho cá nhân, nhóm nhỏ dùng thử", "free.note": "miễn phí mãi mãi", "free.l1": "1 nhóm · tối đa 3 dự án", "free.l2": "WBS · Gantt · Tổng quan", "free.l3": "Kết nối agent bên ngoài (MCP)", "free.btn": "Dùng miễn phí",
+      "pro.badge": "Khuyên dùng", "pro.for": "Cho đội outsource và studio vận hành thực tế", "pro.note": "/ người dùng · tháng (đang điều chỉnh giá)",
+      "pro.l1": "Không giới hạn dự án và thành viên, nhiều nhóm", "pro.l2": "Trợ lý AI tích hợp (đề xuất · duyệt)", "pro.l3": "Chia sẻ mockup bằng tên miền riêng", "pro.l4": "Tự động soạn báo cáo tuần", "pro.btn": "Dùng thử Pro 14 ngày",
+      "self.name": "Tự triển khai", "self.for": "Cho tổ chức không thể dùng cloud", "self.price": "Báo giá riêng",
+      "self.l1": "Cài trên máy chủ riêng / mạng nội bộ", "self.l2": "Mở rộng từ bản mã nguồn mở", "self.l3": "Hỗ trợ triển khai và vận hành", "self.btn": "Liên hệ tư vấn",
+      "faq.eyebrow": "FAQ", "faq.title": "Câu hỏi thường gặp",
+      "q1": "Proyubi có phải là AI agent không?", "a1": "Không. Proyubi là nền tảng quản lý dự án. AI đưa ra đề xuất trên WBS và Gantt, còn con người là người quyết định. Các agent bên ngoài như Claude, ChatGPT cũng kết nối qua cùng cơ chế “đề xuất → duyệt”.",
+      "q2": "AI có tự ý sửa task không?", "a2": "Không. Mọi thay đổi của AI đều đến dưới dạng đề xuất và chỉ có hiệu lực sau khi được duyệt. Người duyệt và nội dung được ghi vào nhật ký kiểm toán.",
+      "q3": "Có chuyển từ WBS trên Excel sang được không?", "a3": "Được. Bạn có thể nhập thẳng WBS từ Excel, hoặc dán vào AI để tạo bản nháp task.",
+      "q4": "Có cho khách hàng xem màn hình được không?", "a4": "Mockup có thể chia sẻ cho khách qua link có thời hạn trên tên miền của bạn, và thu hồi bất cứ lúc nào.",
+      "q5": "Có chạy trên máy chủ riêng được không?", "a5": "Được, với bản tự triển khai. Bản này dựa trên phiên bản mã nguồn mở, và chúng tôi hỗ trợ cả triển khai lẫn vận hành.",
+      "cta.title": "Từ hôm nay, chạy dự án cùng AI.", "cta.lead": "Đăng ký chỉ mất 1 phút. Nhập WBS hiện có là bắt đầu được ngay.", "cta.btn1": "Dùng miễn phí", "cta.btn2": "Đặt lịch demo",
+      "ft.tag": "Quản lý dự án thuần AI, nơi con người và AI cùng làm việc trên một Gantt.", "ft.product": "Sản phẩm", "ft.scenes": "Tình huống", "ft.res": "Tài nguyên",
+      "ft.overview": "Tổng quan", "ft.gantt": "WBS · Gantt", "ft.ai": "Trợ lý AI", "ft.mock": "Chia sẻ mockup", "ft.s1": "Phát triển outsource", "ft.s2": "Công ty thiết kế", "ft.s3": "IT nội bộ", "ft.self": "Tự triển khai",
+      "ft.help": "Trung tâm trợ giúp", "ft.mcp": "Hướng dẫn kết nối MCP", "ft.terms": "Điều khoản", "ft.privacy": "Quyền riêng tư",
+    },
+    fr: {
+      "meta.title": "Proyubi — Gestion de projet native IA",
+      "nav.features": "Fonctionnalités", "nav.ai": "IA", "nav.scenes": "Cas d'usage", "nav.pricing": "Tarifs", "nav.faq": "FAQ", "nav.login": "Connexion", "nav.cta": "Essai gratuit",
+      "hero.eyebrow": "Gestion de projet native IA",
+      "hero.title": "Humains et IA,<br />sur le même Gantt.",
+      "hero.lead": "WBS, Gantt et vue d'ensemble réunis au même endroit. Dites à Claude ou ChatGPT « transforme ça en tâches » : Proyubi s'occupe de la proposition, de la validation et de la mise à jour.",
+      "hero.cta1": "Essai gratuit", "hero.cta2": "Voir les fonctionnalités", "hero.note": "Sans carte bancaire · Invitez votre équipe en 5 minutes",
+      "app.overview": "Vue d'ensemble", "app.calendar": "Calendrier", "app.projects": "Projets", "app.quality": "Qualité et bugs", "app.resources": "Ressources",
+      "proj.a": "Refonte des commandes", "proj.b": "Appli membres v2", "proj.c": "Landing printemps",
+      "app.gantt": "Gantt", "app.d": "Jour", "app.w": "Semaine", "app.m": "Mois", "app.task": "Tâche",
+      "t.req": "Expression du besoin", "t.screens": "Valider la liste des écrans", "t.design": "Conception", "t.api": "Conception de l'API", "t.testDraft": "Brouillon des tests", "t.impl": "Développement", "t.orderList": "Écran des commandes", "t.review": "◆ Revue client",
+      "av.1": "C", "av.2": "L", "av.3": "M",
+      "f1.tag": "Suggestion IA", "f1.time": "à l'instant", "f1.msg": "« Conception de l'API » a 2 jours de retard. Décaler le début du développement au 13 ?", "f1.later": "Plus tard", "f1.ok": "Valider et appliquer",
+      "f2.label": "Tâches en retard cette semaine", "f2.unit": "tâches · −2 vs semaine dernière",
+      "feat.eyebrow": "Fonctionnalités", "feat.title": "Gérez vos projets avec l'IA.", "feat.lead": "L'IA ne doit pas rester enfermée dans une fenêtre de chat. Proyubi l'installe là où votre équipe travaille vraiment : sur le WBS et le Gantt.",
+      "c1.eyebrow": "Vue d'ensemble", "c1.title": "Voyez ce qui dérape<br />dès l'ouverture.", "c1.lead": "Retards, tâches à la traîne et tâches sans responsable remontent automatiquement, tous projets confondus. Plus besoin de les ouvrir un par un.",
+      "c1.hl": "Vue entreprise / Ma vue", "c1.hlDesc": "Les managers voient les risques de tous les projets, chaque membre voit ce qu'il a à faire aujourd'hui. La vue par défaut suit le rôle.",
+      "c1.p1": "Blocages par dépendance et tâches non assignées calculés côté serveur", "c1.p2": "D'un risque au Gantt en un clic",
+      "ov.title": "Vue d'ensemble", "ov.all": "Tout", "ov.me": "Ma vue",
+      "k.active": "Projets en cours", "k.lateProj": "Projets en retard", "k.lateTask": "Tâches en retard", "k.week": "Échéances de la semaine",
+      "r.overdue": "En retard", "r.behind": "À la traîne", "r.unassigned": "Non assignée", "r.blocked": "Bloquée",
+      "r1.name": "Conception de l'API · Refonte des commandes", "r2.name": "Paiements · Appli membres v2", "r3.name": "Image OGP · Landing printemps", "r4.name": "Écran des commandes · Refonte des commandes",
+      "w.plus2": "+2 j", "w.in3": "J-3", "w.in5": "J-5", "w.today": "Aujourd'hui",
+      "c2.eyebrow": "WBS · Gantt", "c2.title": "WBS et Gantt<br />sur un seul écran.", "c2.lead": "La hiérarchie client → projet → tâche s'affiche directement sur le Gantt. Déplacez une date : tout ce qui en dépend suit, jours fériés compris.",
+      "c2.hl": "Dépendances · jalons · calendriers des jours fériés", "c2.hlDesc": "Jours fériés japonais et congés de l'entreprise intégrés. Estimation à l'heure possible.",
+      "c2.p1": "Commentaires et historique sur chaque tâche", "c2.p2": "Transformez une carte mentale en WBS",
+      "g2.progress": "64 % terminé", "dw.mon": "L", "dw.tue": "M", "dw.wed": "M", "dw.thu": "J", "dw.fri": "V",
+      "t2.auth": "Authentification", "t2.login": "Écran de connexion", "t2.sns": "Connexion sociale", "t2.pay": "Paiements", "t2.stripe": "Intégration Stripe", "t2.receipt": "E-mail de reçu", "t2.release": "◆ Mise en production",
+      "c3.eyebrow": "Assistant IA · MCP", "c3.title": "« Fais-en des tâches » :<br />c'est dans le WBS.", "c3.lead": "Collez l'e-mail d'un client ou un compte rendu, l'IA rédige les tâches. Chaque écriture arrive sous forme de proposition et ne s'applique qu'après validation humaine.",
+      "c3.hl": "Proposer → valider → exécuter, avec journal d'audit", "c3.hlDesc": "Chaque modification de l'IA passe par une validation humaine. Vous savez toujours qui a validé quoi.",
+      "c3.p1": "Connectez Claude ou ChatGPT en collant une URL", "c3.p2": "Rapport d'avancement hebdomadaire pour le client, rédigé automatiquement",
+      "ai.mode": "Mode proposition", "ai.user": "Transforme les besoins de cet e-mail client en tâches dans Refonte des commandes", "ai.bot": "J'ai trouvé 3 tâches dans l'e-mail. Elles dépendent de la tâche existante « Conception de l'API ».",
+      "ai.r1": "Import CSV des commandes en masse", "ai.r2": "Webhook de statut d'expédition", "ai.r3": "Droits : ajouter le rôle Commercial", "u.d3": "3 j", "u.d2": "2 j", "u.d1": "1 j", "ai.edit": "Modifier", "ai.approve": "Valider et ajouter au WBS",
+      "c4.eyebrow": "Maquettes · tableau de design", "c4.title": "Partagez vos maquettes<br />sur votre propre domaine.", "c4.lead": "Publiez sur un projet ou une tâche les maquettes HTML générées par Claude Code ou Codex. Le client ne reçoit qu'un lien sur votre domaine.",
+      "c4.hl": "Liens de partage à durée limitée et révocables", "c4.hlDesc": "Chaque version est conservée. Réémettez ou révoquez un lien en un clic.",
+      "c4.p1": "Tableaux blancs et designs .pen rangés par projet", "c4.p2": "Liez vos fichiers Google Drive au Gantt",
+      "mk.caption": "Liste des commandes v3 · mise à jour le 22/10", "mk.expire": "Expire dans 7 jours", "mk.views": "12 vues",
+      "int.eyebrow": "Vos outils actuels", "int.title": "Une équipe native IA,<br />pas à pas.", "int.lead": "Inutile de réinventer votre façon de travailler. Gardez vos agents, votre code, vos messageries et vos documents : connectez-les simplement à Proyubi.",
+      "i1.t": "Branchez les agents que vous utilisez déjà", "i1.d": "Le serveur MCP intégré permet à votre IA habituelle de consulter les projets, d'ajouter des tâches et de vérifier les risques.",
+      "i2.t": "Code et CI reliés aux tâches", "i2.d": "Commits et pull requests se rattachent automatiquement aux tâches : validez en regardant les résultats de la CI.",
+      "i3.t": "Des notifications là où l'on regarde", "i3.d": "Alertes d'échéance et validations en attente arrivent sur les canaux que votre équipe suit déjà.",
+      "i4.t": "Les documents restent des liens", "i4.d": "Ajoutez les documents client depuis Drive avec aperçu, et importez votre WBS Excel tel quel.",
+      "chip.mcp": "Tout agent MCP", "chip.mail": "E-mail",
+      "sc.eyebrow": "Cas d'usage", "sc.title": "Quel que soit le projet, Proyubi s'adapte.", "sc.step": "ÉTAPE",
+      "pr.eyebrow": "Tarifs", "pr.title": "Commencez petit.<br />Auto-hébergez au besoin.", "pr.lead": "La version cloud est gratuite pour commencer. Si votre politique interdit le cloud, installez-la sur vos propres serveurs.",
+      "free.for": "Pour tester seul ou en petite équipe", "free.note": "gratuit pour toujours", "free.l1": "1 équipe · jusqu'à 3 projets", "free.l2": "WBS · Gantt · Vue d'ensemble", "free.l3": "Agents externes (MCP)", "free.btn": "Essai gratuit",
+      "pro.badge": "Recommandé", "pro.for": "Pour les agences et ESN en production", "pro.note": "/ utilisateur · mois (tarif à définir)",
+      "pro.l1": "Projets et membres illimités, plusieurs équipes", "pro.l2": "Assistant IA intégré (proposer · valider)", "pro.l3": "Partage de maquettes sur votre domaine", "pro.l4": "Rapports hebdomadaires rédigés automatiquement", "pro.btn": "Essayer Pro 14 jours",
+      "self.name": "Auto-hébergé", "self.for": "Pour les organisations qui ne peuvent pas utiliser le cloud", "self.price": "Sur devis",
+      "self.l1": "Sur vos serveurs ou réseau privé", "self.l2": "Basé sur l'édition open source", "self.l3": "Accompagnement à l'installation et à l'exploitation", "self.btn": "Nous contacter",
+      "faq.eyebrow": "FAQ", "faq.title": "Questions fréquentes",
+      "q1": "Proyubi est-il un agent IA ?", "a1": "Non. Proyubi est le socle de votre gestion de projet. L'IA fait des propositions sur votre WBS et votre Gantt ; ce sont les humains qui décident. Les agents externes comme Claude ou ChatGPT passent par le même circuit proposer → valider.",
+      "q2": "L'IA peut-elle modifier des tâches toute seule ?", "a2": "Non. Tout ce que l'IA écrit arrive sous forme de proposition et ne s'applique qu'après validation. Le valideur et la modification sont consignés dans le journal d'audit.",
+      "q3": "Peut-on migrer depuis un WBS Excel ?", "a3": "Oui. Importez directement votre WBS Excel, ou collez-le à l'IA pour en faire des brouillons de tâches.",
+      "q4": "Peut-on montrer les écrans aux clients ?", "a4": "Les maquettes se partagent avec vos clients via des liens à durée limitée sur votre propre domaine, révocables à tout moment.",
+      "q5": "Peut-on l'héberger sur nos propres serveurs ?", "a5": "Oui, avec l'édition auto-hébergée. Elle repose sur l'édition open source, et nous accompagnons l'installation comme l'exploitation.",
+      "cta.title": "Pilotez vos projets avec l'IA dès aujourd'hui.", "cta.lead": "Inscription en une minute. Importez votre WBS actuel et c'est parti.", "cta.btn1": "Essai gratuit", "cta.btn2": "Réserver une démo",
+      "ft.tag": "La gestion de projet native IA où humains et IA partagent le même Gantt.", "ft.product": "Produit", "ft.scenes": "Cas d'usage", "ft.res": "Ressources",
+      "ft.overview": "Vue d'ensemble", "ft.gantt": "WBS · Gantt", "ft.ai": "Assistant IA", "ft.mock": "Partage de maquettes", "ft.s1": "Développement au forfait", "ft.s2": "Agences de design", "ft.s3": "DSI interne", "ft.self": "Auto-hébergement",
+      "ft.help": "Centre d'aide", "ft.mcp": "Guide de connexion MCP", "ft.terms": "Conditions d'utilisation", "ft.privacy": "Confidentialité",
+    },
+    id: {
+      "meta.title": "Proyubi — Manajemen proyek berbasis AI",
+      "nav.features": "Fitur", "nav.ai": "AI", "nav.scenes": "Kasus penggunaan", "nav.pricing": "Harga", "nav.faq": "FAQ", "nav.login": "Masuk", "nav.cta": "Mulai gratis",
+      "hero.eyebrow": "Manajemen proyek berbasis AI",
+      "hero.title": "Manusia dan AI,<br />di Gantt yang sama.",
+      "hero.lead": "WBS, Gantt, dan dasbor ringkasan dalam satu tempat. Cukup bilang ke Claude atau ChatGPT “jadikan ini tugas”, Proyubi yang mengurus usulan, persetujuan, hingga pembaruannya.",
+      "hero.cta1": "Mulai gratis", "hero.cta2": "Lihat fitur", "hero.note": "Tanpa kartu kredit · Undang tim dalam 5 menit",
+      "app.overview": "Ringkasan", "app.calendar": "Kalender", "app.projects": "Proyek", "app.quality": "Kualitas & bug", "app.resources": "Sumber daya",
+      "proj.a": "Pembaruan sistem pesanan", "proj.b": "Aplikasi member v2", "proj.c": "Landing page musim semi",
+      "app.gantt": "Gantt", "app.d": "Hari", "app.w": "Minggu", "app.m": "Bulan", "app.task": "Tugas",
+      "t.req": "Analisis kebutuhan", "t.screens": "Finalisasi daftar layar", "t.design": "Desain", "t.api": "Desain API", "t.testDraft": "Draf test case", "t.impl": "Pengembangan", "t.orderList": "Layar daftar pesanan", "t.review": "◆ Review klien",
+      "av.1": "B", "av.2": "D", "av.3": "R",
+      "f1.tag": "Usulan AI", "f1.time": "baru saja", "f1.msg": "“Desain API” terlambat 2 hari. Mundurkan mulai pengembangan ke tanggal 13?", "f1.later": "Nanti", "f1.ok": "Setujui & terapkan",
+      "f2.label": "Tugas terlambat minggu ini", "f2.unit": "tugas · −2 dari minggu lalu",
+      "feat.eyebrow": "Fitur", "feat.title": "Kelola proyek bersama AI.", "feat.lead": "AI tidak seharusnya hanya tinggal di jendela chat. Proyubi membawanya ke tempat tim benar-benar bekerja — WBS dan Gantt.",
+      "c1.eyebrow": "Ringkasan", "c1.title": "Proyek terlambat<br />langsung terlihat.", "c1.lead": "Tugas yang lewat tenggat, tertinggal, atau belum ada penanggung jawab otomatis terdeteksi di semua proyek. Tak perlu lagi membuka proyek satu per satu.",
+      "c1.hl": "Tampilan perusahaan / Tampilan saya", "c1.hlDesc": "Manajer melihat risiko semua proyek, anggota melihat pekerjaannya hari ini. Tampilan default mengikuti peran.",
+      "c1.p1": "Hambatan dependensi dan tugas tanpa penanggung jawab dihitung di server", "c1.p2": "Dari baris risiko ke Gantt dengan sekali klik",
+      "ov.title": "Ringkasan", "ov.all": "Semua", "ov.me": "Saya",
+      "k.active": "Proyek aktif", "k.lateProj": "Proyek terlambat", "k.lateTask": "Tugas terlambat", "k.week": "Jatuh tempo minggu ini",
+      "r.overdue": "Lewat tenggat", "r.behind": "Tertinggal", "r.unassigned": "Belum ditugaskan", "r.blocked": "Menunggu dependensi",
+      "r1.name": "Desain API · Pembaruan sistem pesanan", "r2.name": "Pembayaran · Aplikasi member v2", "r3.name": "Gambar OGP · Landing page musim semi", "r4.name": "Layar daftar pesanan · Pembaruan sistem pesanan",
+      "w.plus2": "+2 hari", "w.in3": "3 hari lagi", "w.in5": "5 hari lagi", "w.today": "Hari ini",
+      "c2.eyebrow": "WBS · Gantt", "c2.title": "WBS dan Gantt<br />dalam satu layar.", "c2.lead": "Hierarki klien → proyek → tugas langsung tampil di Gantt. Geser jadwal, tugas berikutnya ikut menyesuaikan sesuai dependensi dan hari libur.",
+      "c2.hl": "Dependensi · milestone · kalender hari libur", "c2.hlDesc": "Hari libur nasional Jepang dan hari libur perusahaan sudah tersedia. Estimasi per jam juga didukung.",
+      "c2.p1": "Komentar dan riwayat perubahan di setiap tugas", "c2.p2": "Ubah mind map langsung menjadi WBS",
+      "g2.progress": "64% selesai", "dw.mon": "Sen", "dw.tue": "Sel", "dw.wed": "Rab", "dw.thu": "Kam", "dw.fri": "Jum",
+      "t2.auth": "Autentikasi", "t2.login": "Layar login", "t2.sns": "Login media sosial", "t2.pay": "Pembayaran", "t2.stripe": "Integrasi Stripe", "t2.receipt": "Email kuitansi", "t2.release": "◆ Rilis",
+      "c3.eyebrow": "Asisten AI · MCP", "c3.title": "Cukup bilang,<br />tugas masuk ke WBS.", "c3.lead": "Tempel email klien atau notulen rapat, AI akan menyusun draf tugas. Setiap perubahan datang sebagai usulan dan baru berlaku setelah disetujui manusia.",
+      "c3.hl": "Usul → setujui → jalankan, dengan log audit lengkap", "c3.hlDesc": "Setiap perubahan oleh AI wajib melalui persetujuan manusia. Siapa menyetujui apa selalu bisa ditelusuri.",
+      "c3.p1": "Hubungkan Claude / ChatGPT cukup dengan menempel URL", "c3.p2": "Laporan progres mingguan untuk klien, disusun otomatis",
+      "ai.mode": "Mode usulan", "ai.user": "Ubah kebutuhan di email klien ini menjadi tugas di Pembaruan sistem pesanan", "ai.bot": "Saya menemukan 3 tugas dari email tersebut. Tugas-tugas ini bergantung pada tugas “Desain API” yang sudah ada.",
+      "ai.r1": "Impor pesanan massal via CSV", "ai.r2": "Webhook status pengiriman", "ai.r3": "Hak akses: tambah peran Sales", "u.d3": "3 hr", "u.d2": "2 hr", "u.d1": "1 hr", "ai.edit": "Ubah", "ai.approve": "Setujui & tambahkan ke WBS",
+      "c4.eyebrow": "Mockup · papan desain", "c4.title": "Bagikan mockup<br />dengan domain sendiri.", "c4.lead": "Publikasikan mockup HTML buatan Claude Code atau Codex ke proyek atau tugas. Klien hanya menerima tautan berbagi di domain Anda.",
+      "c4.hl": "Tautan berbagi berbatas waktu dan bisa dicabut", "c4.hlDesc": "Setiap versi tersimpan. Terbitkan ulang atau cabut tautan dengan sekali klik.",
+      "c4.p1": "Papan tulis dan desain .pen disimpan per proyek", "c4.p2": "Tautkan file Google Drive ke Gantt",
+      "mk.caption": "Daftar pesanan v3 · diperbarui 22/10", "mk.expire": "Kedaluwarsa dalam 7 hari", "mk.views": "12 kali dilihat",
+      "int.eyebrow": "Tetap pakai alat yang ada", "int.title": "Tim AI-native,<br />selangkah demi selangkah.", "int.lead": "Tak perlu merombak cara kerja. Agen, kode, kanal komunikasi, dan dokumen tetap seperti biasa — cukup hubungkan ke Proyubi.",
+      "i1.t": "Hubungkan agen yang sudah Anda pakai", "i1.d": "Server MCP bawaan memungkinkan AI andalan Anda mencari proyek, menambah tugas, dan memeriksa risiko.",
+      "i2.t": "Kaitkan kode dan CI ke tugas", "i2.d": "Commit dan pull request otomatis terhubung ke tugas, sehingga Anda bisa menyetujui sambil melihat hasil CI.",
+      "i3.t": "Notifikasi di tempat yang dilihat tim", "i3.d": "Pengingat tenggat dan persetujuan tertunda dikirim ke kanal yang biasa dipantau tim.",
+      "i4.t": "Dokumen tetap berupa tautan", "i4.d": "Daftarkan dokumen klien dari Drive lengkap dengan pratinjau, dan impor WBS dari Excel apa adanya.",
+      "chip.mcp": "Agen yang mendukung MCP", "chip.mail": "Email",
+      "sc.eyebrow": "Kasus penggunaan", "sc.title": "Proyek apa pun, serahkan pada Proyubi.", "sc.step": "LANGKAH",
+      "pr.eyebrow": "Harga", "pr.title": "Mulai dari kecil,<br />self-host bila perlu.", "pr.lead": "Versi cloud bisa dipakai gratis untuk memulai. Jika kebijakan perusahaan tidak mengizinkan cloud, jalankan di server sendiri.",
+      "free.for": "Untuk perorangan atau tim kecil yang ingin mencoba", "free.note": "gratis selamanya", "free.l1": "1 tim · maksimal 3 proyek", "free.l2": "WBS · Gantt · Ringkasan", "free.l3": "Agen eksternal (MCP)", "free.btn": "Mulai gratis",
+      "pro.badge": "Rekomendasi", "pro.for": "Untuk agensi dan software house yang beroperasi penuh", "pro.note": "/ pengguna · bulan (harga dalam penyesuaian)",
+      "pro.l1": "Proyek dan anggota tanpa batas, banyak tim", "pro.l2": "Asisten AI bawaan (usul · setujui)", "pro.l3": "Berbagi mockup dengan domain sendiri", "pro.l4": "Laporan mingguan disusun otomatis", "pro.btn": "Coba Pro gratis 14 hari",
+      "self.name": "Self-hosted", "self.for": "Untuk organisasi yang tidak bisa memakai cloud", "self.price": "Penawaran khusus",
+      "self.l1": "Di server sendiri / jaringan privat", "self.l2": "Dikembangkan dari edisi open source", "self.l3": "Dukungan instalasi dan operasional", "self.btn": "Hubungi kami",
+      "faq.eyebrow": "FAQ", "faq.title": "Pertanyaan umum",
+      "q1": "Apakah Proyubi sebuah agen AI?", "a1": "Bukan. Proyubi adalah fondasi untuk mengelola proyek. AI memberi usulan di atas WBS dan Gantt, sementara keputusan tetap di tangan manusia. Agen eksternal seperti Claude dan ChatGPT juga terhubung lewat alur “usul → setujui” yang sama.",
+      "q2": "Apakah AI bisa mengubah tugas sendiri?", "a2": "Tidak. Semua yang ditulis AI datang sebagai usulan dan baru berlaku setelah disetujui. Penyetuju dan isi perubahannya tercatat di log audit.",
+      "q3": "Bisakah pindah dari WBS di Excel?", "a3": "Bisa. Impor WBS dari Excel secara langsung, atau tempel ke AI untuk dijadikan draf tugas.",
+      "q4": "Bisakah klien melihat tampilan kami?", "a4": "Mockup bisa dibagikan ke klien lewat tautan berbatas waktu di domain Anda sendiri, dan bisa dicabut kapan saja.",
+      "q5": "Bisakah dijalankan di server sendiri?", "a5": "Bisa, dengan edisi self-hosted. Edisi ini dibangun dari versi open source, dan kami mendukung instalasi serta operasionalnya.",
+      "cta.title": "Mulai jalankan proyek bersama AI hari ini.", "cta.lead": "Daftar cukup 1 menit. Impor WBS yang ada dan langsung mulai.", "cta.btn1": "Mulai gratis", "cta.btn2": "Jadwalkan demo",
+      "ft.tag": "Manajemen proyek berbasis AI, tempat manusia dan AI bekerja di Gantt yang sama.", "ft.product": "Produk", "ft.scenes": "Kasus penggunaan", "ft.res": "Sumber daya",
+      "ft.overview": "Ringkasan", "ft.gantt": "WBS · Gantt", "ft.ai": "Asisten AI", "ft.mock": "Berbagi mockup", "ft.s1": "Pengembangan untuk klien", "ft.s2": "Agensi desain", "ft.s3": "IT internal", "ft.self": "Self-hosting",
+      "ft.help": "Pusat bantuan", "ft.mcp": "Panduan koneksi MCP", "ft.terms": "Ketentuan layanan", "ft.privacy": "Kebijakan privasi",
+    },
+  };
+
+  // 日语基准：从 DOM 读出原文
+  I18N.ja = { "sc.step": "STEP" };
+  document.querySelectorAll("[data-i18n]").forEach((el) => {
+    if (!(el.dataset.i18n in I18N.ja)) I18N.ja[el.dataset.i18n] = el.innerHTML;
+  });
+
+  const store = {
+    get() { try { return localStorage.getItem("pullcord-lang"); } catch { return null; } },
+    set(v) { try { localStorage.setItem("pullcord-lang", v); } catch { /* 隐私模式等 */ } },
+  };
+  const isLang = (c) => LANGS.some((l) => l.code === c);
+  function detect() {
+    const q = new URLSearchParams(location.search).get("lang");
+    if (isLang(q)) return q;
+    const saved = store.get();
+    if (isLang(saved)) return saved;
+    for (const n of navigator.languages || [navigator.language]) {
+      const c = (n || "").toLowerCase().split("-")[0];
+      if (isLang(c)) return c;
+    }
+    return "ja";
+  }
+
+  let current = "ja";
+  let scene = 0;
+  const t = (k) => (I18N[current] && I18N[current][k]) ?? I18N.ja[k] ?? "";
+
+  // 活用シーン：hifox 式的左侧 tab
+  const tabs = document.getElementById("tabs");
+  const panel = document.getElementById("panel");
+  function renderScenes() {
+    const list = SCENES[current] || SCENES.ja;
+    tabs.innerHTML = "";
+    list.forEach((s, i) => {
+      const b = document.createElement("button");
+      b.className = "tab" + (i === scene ? " on" : "");
+      b.type = "button"; b.setAttribute("role", "tab"); b.setAttribute("aria-selected", i === scene);
+      b.innerHTML = `<small>${String(i + 1).padStart(2, "0")}</small>${s[0]}`;
+      b.onclick = () => { scene = i; renderScenes(); };
+      tabs.appendChild(b);
+    });
+    const s = list[scene];
+    panel.innerHTML = `<h3>${s[1]}</h3><p class="lead">${s[2]}</p>
+      <div class="flow">${s[3].map((st, k) => `<div class="step"><small>${t("sc.step")} ${k + 1}</small><b>${st[0]}</b><p>${st[1]}</p></div>`).join("")}</div>
+      <div class="scene-quote">${s[4]}</div>`;
+  }
+
+  const langBox = document.getElementById("lang");
+  const langMenu = document.getElementById("langMenu");
+  const footLangs = document.getElementById("footLangs");
+  function renderSwitchers() {
+    const cur = LANGS.find((l) => l.code === current);
+    document.getElementById("langLabel").textContent = cur.label;
+    langMenu.innerHTML = LANGS.map((l) => `<button type="button" role="menuitem" data-lang="${l.code}" class="${l.code === current ? "on" : ""}">${l.label}<small>${l.code}</small></button>`).join("");
+    footLangs.innerHTML = LANGS.map((l) => `<button type="button" data-lang="${l.code}" class="${l.code === current ? "on" : ""}">${l.label}</button>`).join("");
+  }
+
+  function setLang(code, persist) {
+    current = code;
+    const meta = LANGS.find((l) => l.code === code);
+    document.documentElement.lang = meta.html;
+    document.querySelectorAll("[data-i18n]").forEach((el) => {
+      const v = t(el.dataset.i18n);
+      if (el.tagName === "TITLE") document.title = v; else el.innerHTML = v;
+    });
+    renderSwitchers();
+    renderScenes();
+    if (persist) {
+      store.set(code);
+      const u = new URL(location.href);
+      u.searchParams.set("lang", code);
+      history.replaceState(null, "", u);
+    }
+  }
+
+  document.getElementById("langBtn").addEventListener("click", (e) => {
+    e.stopPropagation();
+    const open = langBox.classList.toggle("open");
+    e.currentTarget.setAttribute("aria-expanded", open);
+  });
+  document.addEventListener("click", (e) => {
+    const b = e.target.closest("[data-lang]");
+    if (b) setLang(b.dataset.lang, true);
+    if (!e.target.closest("#lang")) langBox.classList.remove("open");
+    else if (b) langBox.classList.remove("open");
+  });
+  document.addEventListener("keydown", (e) => { if (e.key === "Escape") langBox.classList.remove("open"); });
+
+  setLang(detect(), false);
+
+  // 导航滚动态
+  const nav = document.getElementById("nav");
+  const onScroll = () => nav.classList.toggle("scrolled", window.scrollY > 8);
+  window.addEventListener("scroll", onScroll, { passive: true }); onScroll();
+
+  // 滚动渐显
+  const io = new IntersectionObserver((es) => es.forEach((e) => { if (e.isIntersecting) { e.target.classList.add("in"); io.unobserve(e.target); } }), { threshold: 0.12 });
+  document.querySelectorAll(".reveal").forEach((el) => io.observe(el));
+</script>
+</body>
+</html>

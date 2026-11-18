@@ -1,0 +1,238 @@
+/* 年度产品スケジュール（按整个产品维护，版本铺到 12 个月） */
+
+.an-wrap {
+  display: flex;
+  flex-direction: column;
+  background: #fff;
+  border: 1px solid #f0f0f0;
+  border-radius: 8px;
+}
+
+.an-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px 16px;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.an-title {
+  font-size: 15px;
+  font-weight: 600;
+  color: #1f2329;
+}
+
+.an-toolbar-right {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.an-year-nav {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.an-empty {
+  padding: 64px 0;
+}
+
+.an-scroll {
+  overflow-x: auto;
+  padding: 4px 0 12px;
+}
+
+/* ===== 表头 ===== */
+.an-head {
+  display: flex;
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  background: #fafafa;
+  border-bottom: 1px solid #eaecef;
+}
+
+.an-corner {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  padding-left: 16px;
+  font-weight: 600;
+  color: #8c8c8c;
+  border-right: 1px solid #eaecef;
+}
+
+.an-months {
+  position: relative;
+  display: flex;
+  flex: 0 0 auto;
+}
+
+.an-month {
+  flex: 0 0 auto;
+  height: 34px;
+  line-height: 34px;
+  text-align: center;
+  font-size: 12px;
+  color: #595959;
+  border-right: 1px solid #f0f0f0;
+}
+
+.an-month.is-quarter {
+  border-left: 1px solid #d9d9d9;
+}
+
+/* ===== 行 ===== */
+.an-body {
+  position: relative;
+}
+
+.an-row {
+  display: flex;
+  align-items: stretch;
+  border-bottom: 1px solid #f5f5f5;
+}
+
+.an-label {
+  flex: 0 0 auto;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 2px;
+  padding: 0 12px 0 16px;
+  border-right: 1px solid #eaecef;
+  overflow: hidden;
+}
+
+.an-label-main {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+}
+
+.an-ver {
+  font-weight: 600;
+  color: #2f6bff;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  cursor: pointer;
+}
+
+.an-ver:hover {
+  text-decoration: underline;
+}
+
+.an-label-sub {
+  font-size: 11px;
+  color: #8c8c8c;
+  white-space: nowrap;
+}
+
+/* ===== 轨道 + 色块 ===== */
+.an-track {
+  position: relative;
+  flex: 0 0 auto;
+}
+
+.an-cell {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  border-right: 1px solid #f5f5f5;
+}
+
+.an-cell.is-quarter {
+  border-left: 1px solid #ececec;
+}
+
+.an-bar {
+  position: absolute;
+  top: 7px;
+  height: 26px;
+  border-radius: 5px;
+  display: flex;
+  align-items: center;
+  padding: 0 8px;
+  color: #fff;
+  cursor: pointer;
+  overflow: hidden;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.12);
+  transition:
+    filter 0.15s,
+    box-shadow 0.15s;
+}
+
+.an-bar:hover {
+  filter: brightness(1.05);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+}
+
+/* 跨年延续：去掉对应侧圆角并加切角提示 */
+.an-bar.cont-l {
+  border-top-left-radius: 0;
+  border-bottom-left-radius: 0;
+  border-left: 2px dashed rgba(255, 255, 255, 0.7);
+}
+
+.an-bar.cont-r {
+  border-top-right-radius: 0;
+  border-bottom-right-radius: 0;
+  border-right: 2px dashed rgba(255, 255, 255, 0.7);
+}
+
+/* 进度填充：在色块内叠一层更亮的覆盖，直观表示完成度 */
+.an-bar-fill {
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  background: rgba(255, 255, 255, 0.28);
+  pointer-events: none;
+}
+
+.an-bar-name {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  font-weight: 500;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  text-shadow: 0 1px 1px rgba(0, 0, 0, 0.18);
+}
+
+.an-bar-pct {
+  font-size: 11px;
+  opacity: 0.9;
+}
+
+/* 发布里程碑 ▼（结束日） */
+.an-release {
+  position: absolute;
+  top: 2px;
+  width: 0;
+  height: 0;
+  margin-left: -6px;
+  border-left: 6px solid transparent;
+  border-right: 6px solid transparent;
+  border-top: 9px solid #f5222d;
+  filter: drop-shadow(0 1px 1px rgba(0, 0, 0, 0.25));
+  pointer-events: none;
+}
+
+/* 今天竖线 */
+.an-today {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 0;
+  border-left: 1px dashed #f5222d;
+  z-index: 1;
+  pointer-events: none;
+}

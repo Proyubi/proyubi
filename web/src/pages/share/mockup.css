@@ -1,0 +1,77 @@
+/* モックアップ対外共有ページ（M5） */
+.share-mockup {
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  background: #f5f6f8;
+}
+
+.share-mockup-top {
+  flex: none;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 16px;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 16px;
+  background: #fff;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.share-mockup-brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+
+.share-mockup-logo {
+  width: 24px;
+  height: 24px;
+  object-fit: contain;
+}
+
+.share-mockup-title {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.share-mockup-sub {
+  font-size: 12px;
+  color: #8c8c8c;
+  white-space: nowrap;
+}
+
+.share-mockup-meta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.share-mockup-frame {
+  flex: 1;
+  min-height: 0;
+  width: 100%;
+}
+
+.share-mockup-center {
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  padding: 16px;
+  text-align: center;
+}
+
+.share-mockup-center .share-mockup-logo {
+  width: 40px;
+  height: 40px;
+}
+
+.share-mockup-invalid {
+  margin: 0;
+  color: #595959;
+}

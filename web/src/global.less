@@ -1,0 +1,128 @@
+html,
+body,
+#root {
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  font-family:
+    'Noto Sans SC', -apple-system, BlinkMacSystemFont,
+    'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei',
+    'Source Han Sans SC', 'WenQuanYi Micro Hei',
+    'Helvetica Neue', Arial, sans-serif,
+    'Apple Color Emoji', 'Segoe UI Emoji', 'Noto Color Emoji';
+}
+
+.colorWeak {
+  filter: invert(80%);
+}
+
+.ant-layout {
+  min-height: 100vh;
+}
+.ant-pro-sider.ant-layout-sider.ant-pro-sider-fixed {
+  left: unset;
+}
+
+// Top header: organic dot matrix that fades in and out across the width.
+.ant-pro-layout .ant-pro-layout-header,
+.ant-pro-layout-header.ant-pro-top-nav-header {
+  position: relative;
+  background: linear-gradient(180deg, #fcfdfe 0%, #f6f8fa 100%) !important;
+  border-bottom: 1px solid rgba(15, 23, 42, 0.04);
+  overflow: hidden;
+}
+
+.ant-pro-layout .ant-pro-layout-header::before,
+.ant-pro-layout-header.ant-pro-top-nav-header::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background-image: radial-gradient(circle at 1px 1px, rgba(15, 23, 42, 0.09) 0.8px, transparent 1.4px);
+  background-size: 14px 14px;
+  -webkit-mask-image:
+    radial-gradient(ellipse 45% 130% at 18% 60%, #000 5%, transparent 75%),
+    radial-gradient(ellipse 30% 130% at 48% 40%, #000 10%, transparent 80%),
+    radial-gradient(ellipse 35% 130% at 78% 65%, #000 5%, transparent 80%),
+    radial-gradient(ellipse 20% 130% at 95% 35%, #000 0%, transparent 70%);
+  mask-image:
+    radial-gradient(ellipse 45% 130% at 18% 60%, #000 5%, transparent 75%),
+    radial-gradient(ellipse 30% 130% at 48% 40%, #000 10%, transparent 80%),
+    radial-gradient(ellipse 35% 130% at 78% 65%, #000 5%, transparent 80%),
+    radial-gradient(ellipse 20% 130% at 95% 35%, #000 0%, transparent 70%);
+  pointer-events: none;
+  z-index: 0;
+}
+
+.ant-pro-layout .ant-pro-layout-header > *,
+.ant-pro-layout-header.ant-pro-top-nav-header > * {
+  position: relative;
+  z-index: 1;
+}
+
+// Sider logo: left-align with menu item icons (default Pro Layout centers it).
+.ant-pro-sider .ant-pro-global-header {
+  margin-inline: 32px !important;
+  justify-content: flex-start !important;
+}
+
+// Unified header action (top-right icons: notice, language, etc.)
+.header-action {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  margin-inline: 2px;
+  border-radius: 8px;
+  color: rgba(0, 0, 0, 0.65);
+  font-size: 16px;
+  cursor: pointer;
+  transition: background-color 0.2s ease, color 0.2s ease;
+
+  &:hover {
+    background-color: rgba(0, 0, 0, 0.06);
+    color: rgba(0, 0, 0, 0.88);
+  }
+}
+
+#logo.ant-pro-sider-logo,
+.ant-pro-sider #logo {
+  justify-content: flex-start !important;
+
+  > a {
+    justify-content: flex-start !important;
+    flex: 0 0 auto !important;
+  }
+}
+
+canvas {
+  display: block;
+}
+
+body {
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+ul,
+ol {
+  list-style: none;
+}
+
+@media (max-width: 768px) {
+  .ant-table {
+    width: 100%;
+    overflow-x: auto;
+    &-thead > tr,
+    &-tbody > tr {
+      > th,
+      > td {
+        white-space: pre;
+        > span {
+          display: block;
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,229 @@
+/* コマンドパレット（⌘K）。Modal の枠は使うが中身は自前レイアウト。 */
+.tsp-modal .ant-modal-content {
+  padding: 0;
+  overflow: hidden;
+}
+
+/* ---- 入力行 ---- */
+.tsp-input {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 13px 16px;
+  border-bottom: 1px solid rgba(5, 5, 5, 0.06);
+}
+.tsp-input-icon {
+  color: #9aa0b0;
+  font-size: 16px;
+}
+.tsp-input input {
+  flex: 1;
+  min-width: 0;
+  border: 0;
+  outline: 0;
+  background: none;
+  font-size: 15px;
+  color: inherit;
+  font-family: inherit;
+}
+.tsp-input input::placeholder {
+  color: #a8aec0;
+}
+.tsp-kbd,
+.tsp-foot kbd {
+  font-family:
+    ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 10px;
+  color: #9aa0b0;
+  border: 1px solid rgba(5, 5, 5, 0.1);
+  border-radius: 3px;
+  padding: 1px 5px;
+  background: rgba(0, 0, 0, 0.02);
+}
+
+/* ---- 種別チップ ---- */
+.tsp-chips {
+  display: flex;
+  gap: 6px;
+  padding: 9px 16px;
+  border-bottom: 1px solid rgba(5, 5, 5, 0.06);
+  flex-wrap: wrap;
+}
+.tsp-chip {
+  font: inherit;
+  font-size: 12px;
+  line-height: 20px;
+  padding: 0 10px;
+  border-radius: 12px;
+  border: 1px solid rgba(5, 5, 5, 0.1);
+  background: transparent;
+  color: rgba(0, 0, 0, 0.65);
+  cursor: pointer;
+}
+.tsp-chip:hover {
+  border-color: #91caff;
+}
+.tsp-chip.is-on {
+  background: #e9f1ff;
+  border-color: #a9c8ff;
+  color: #1677ff;
+}
+.tsp-chip b {
+  font-weight: 500;
+  margin-left: 5px;
+  color: #9aa0b0;
+  font-variant-numeric: tabular-nums;
+}
+.tsp-chip.is-on b {
+  color: #1677ff;
+}
+
+/* ---- 結果リスト ---- */
+.tsp-body {
+  /* 幅と同じく画面に追随させる。上限を置かないと縦長ディスプレイで
+     フッターのキー説明が画面外に出る */
+  max-height: min(52vh, 560px);
+  min-height: 180px;
+  overflow-y: auto;
+  padding: 4px 0;
+}
+.tsp-group {
+  font-size: 10.5px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #a2a8b8;
+  padding: 9px 16px 5px;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+}
+.tsp-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 16px;
+  cursor: pointer;
+  border-left: 2px solid transparent;
+}
+.tsp-row.is-selected {
+  background: #e9f1ff;
+  border-left-color: #1677ff;
+}
+.tsp-icon {
+  width: 24px;
+  height: 24px;
+  border-radius: 6px;
+  flex: none;
+  display: grid;
+  place-items: center;
+  font-size: 11px;
+  font-weight: 700;
+  color: #fff;
+}
+.tsp-icon-task {
+  background: #2f6bff;
+}
+.tsp-icon-task.is-ms {
+  background: #722ed1;
+  font-size: 10px;
+}
+.tsp-icon-project {
+  background: #13c2c2;
+}
+.tsp-icon-bug {
+  background: #ff7875;
+}
+.tsp-main {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+.tsp-title {
+  font-size: 13px;
+  line-height: 1.5;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.tsp-path {
+  font-size: 11px;
+  line-height: 1.5;
+  color: #9aa0b0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.tsp-row mark {
+  background: #ffe9a8;
+  color: inherit;
+  border-radius: 2px;
+  padding: 0 1px;
+}
+.tsp-meta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: none;
+}
+.tsp-due {
+  font-size: 11.5px;
+  color: rgba(0, 0, 0, 0.55);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+.tsp-progress {
+  width: 52px;
+  height: 4px;
+  border-radius: 2px;
+  background: rgba(5, 5, 5, 0.06);
+  overflow: hidden;
+  flex: none;
+}
+.tsp-progress i {
+  display: block;
+  height: 100%;
+  background: #2f6bff;
+}
+.tsp-progress i.is-done {
+  background: #52c41a;
+}
+
+/* ---- 空 / ヒント ---- */
+.tsp-state {
+  display: grid;
+  place-items: center;
+  min-height: 180px;
+  padding: 24px 16px;
+}
+.tsp-hint {
+  color: #9aa0b0;
+  font-size: 12.5px;
+  text-align: center;
+}
+
+/* ---- フッター ---- */
+.tsp-foot {
+  display: flex;
+  gap: 16px;
+  padding: 8px 16px;
+  border-top: 1px solid rgba(5, 5, 5, 0.06);
+  background: rgba(0, 0, 0, 0.015);
+  font-size: 11px;
+  color: #9aa0b0;
+}
+.tsp-foot kbd {
+  margin-right: 5px;
+}
+
+/* width の下限(660px)より画面が狭いときの逃げ道。
+   max-width は width より後に効くので、インラインの clamp() を上書きできる。 */
+.tsp-modal {
+  max-width: calc(100vw - 32px);
+  margin: 0 auto;
+}
+
+/* 小さい画面では 1 行の情報量を落とす */
+@media (max-width: 720px) {
+  .tsp-meta .tsp-progress {
+    display: none;
+  }
+}

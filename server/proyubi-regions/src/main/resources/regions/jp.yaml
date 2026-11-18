@@ -1,0 +1,18 @@
+# 日本区域配置
+auth:
+  email: enabled
+  google: enabled
+  # Sign in with Apple：App Store 审核指南 4.8 要求——iOS App 只要提供了第三方登录
+  # （Google 等），就必须同时提供满足"可隐藏邮箱"的等价登录方式。原生流，见 AppleAuthProvider。
+  apple: enabled
+
+account_model:
+  single_user: enabled
+  workspace: enabled
+  default: single_user
+
+capabilities:
+  multi_member: enabled_with_limit
+  collaboration: enabled
+  export: enabled_with_limit
+

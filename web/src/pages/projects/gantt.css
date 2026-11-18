@@ -1,0 +1,164 @@
+.gp-page {
+  /* ProLayout の内容区は上下 32px のパディング（paddingBlockPageContainerContent）を持つが、
+     この画面は甘特の表示行数が最優先で、パンくず行の上に 32px 空ける価値がない。
+     上ぶんだけ打ち消して、余白はこの要素の padding-top(16px) で自前に持つ。
+     下の 32px は甘特下端の余白として残す。 */
+  margin-block-start: -32px;
+  /* 上を打ち消したので、視口から引くのは内容区の「下」パディング 32px だけ。
+     app.tsx が headerRender:false でトップバーは無い（以前の 120px は引きすぎだった）。 */
+  height: calc(100vh - 32px);
+  /* ただし低い画面（ブラウザを縮めた状態）では潰さない：ヘッダ+タブ(約 125)
+     + 上下 padding(34) + 甘特の最小高さ(340) を確保し、
+     足りなければページ側にスクロールを出す */
+  min-height: 500px;
+  display: flex;
+  flex-direction: column;
+  padding: 16px 20px 18px;
+}
+.gp-header {
+  flex-shrink: 0;
+  margin-bottom: 10px;
+}
+/* パンくず → 見出しの縦間隔。上を 16px まで詰めたぶん、行同士がくっついて
+   見えないよう、ここは詰めずに 14px 確保する（タブ行の 10px と揃うリズム）。 */
+.gp-header-top {
+  margin-bottom: 14px;
+  font-size: 12px;
+  line-height: 20px;
+}
+.gp-header-main {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  /* 行間 12 / 列間 20：見出しと操作ボタンが折り返す前に十分離れて見えるようにする */
+  gap: 12px 24px;
+}
+/* 見出し側は縮んでよい（案件名を省略記号で詰める）、操作ボタン側は縮ませない */
+.gp-title-block {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex: 1 1 auto;
+  min-width: 0;
+}
+.gp-back {
+  flex: none;
+  /* text ボタンの内側余白ぶん戻して、見出しをパンくずの左端に揃える */
+  margin-inline-start: -8px;
+  color: #8792a6;
+}
+.gp-back:hover {
+  color: #2f6bff;
+}
+.gp-title {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 700;
+  line-height: 28px;
+  color: #1f2738;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  min-width: 0;
+}
+/* 期間＋進捗のかたまり。縦罫で見出しから切り離す——
+   以前は 案件名・状態・日付・バー が同じ間隔で 1 列に並び、どこまでが名前か読めなかった */
+.gp-meta {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  flex: none;
+  height: 20px;
+  padding-inline-start: 20px;
+  border-inline-start: 1px solid #e8ebf1;
+}
+.gp-dates {
+  color: #9aa3b2;
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+.gp-progress.ant-progress {
+  width: 132px;
+  margin: 0;
+  line-height: 1;
+}
+.gp-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex: none;
+}
+.gp-tabs {
+  margin-top: 10px;
+}
+.gp-tabs .ant-tabs-nav {
+  margin-bottom: 0;
+}
+.gp-empty {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* ===== タブ行右端のキーワード絞り込み＋タスク追加 =====
+   gp-actions（日/週・折りたたむ）は 1280px で既にいっぱいなので、
+   絞り込みと追加は元々空いているタブ行の右側に置く。 */
+.gp-filter {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding-bottom: 8px;
+}
+/* 上のツールバー（日/週・折りたたむ・追加）と同じ 32px 高。
+   size="small" の 24px だと、タブ行に置いたとき明らかに見劣りして押しづらい。 */
+.gp-filter-input {
+  width: 260px;
+}
+.gp-filter-icon {
+  color: #b5bac7;
+}
+.gp-filter-hits {
+  font-size: 12px;
+  color: #6b7286;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+.gp-filter-hits.is-zero {
+  color: #ff4d4f;
+}
+
+/* 狭い画面：入力を縮め、さらに狭ければタブ行の下へ回り込ませる。
+   .gp-tabs は Tabs の nav（flex）なので、extra だけを 100% 幅にして折り返す。 */
+@media (max-width: 1180px) {
+  .gp-filter-input {
+    width: 200px;
+  }
+}
+@media (max-width: 820px) {
+  .gp-tabs .ant-tabs-nav {
+    flex-wrap: wrap;
+  }
+  .gp-tabs .ant-tabs-extra-content {
+    width: 100%;
+    order: 2;
+  }
+  .gp-filter {
+    padding: 6px 0 8px;
+  }
+  .gp-filter-input {
+    flex: 1;
+    width: auto;
+  }
+}
+
+/* 狭い画面：期間と進捗を落として見出し＋状態だけ残す。
+   ヘッダーが折り返すと height:calc(100vh - 32px) 固定のガントが 1 行ぶん縮むため、
+   まずここを削って折り返しを遅らせる。 */
+@media (max-width: 1080px) {
+  .gp-meta {
+    display: none;
+  }
+}

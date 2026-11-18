@@ -1,0 +1,714 @@
+<!doctype html>
+<html lang="ja">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>デザインボード 画面</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700&family=JetBrains+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: spec-sheet page; each screen is a framed app window with a numbered caption (numbers = screen IDs in the spec) */
+:root{
+  --bg:#f3f5f9; --paper:#ffffff; --fg:#1f2430; --muted:#646c7c; --line:#e3e7ef; --soft:#f6f8fc;
+  --primary:#1677ff; --primary-soft:#e8f1ff; --ok:#1f9d55; --ok-soft:#e6f6ec; --warn:#d97706; --warn-soft:#fff4e0;
+  --bad:#d4380d; --bad-soft:#fff0eb; --ai:#6b4fd8; --ai-soft:#f1edff; --side:#0f1a2e; --side-fg:#c8d1e1;
+  --font:"Noto Sans JP","Hiragino Sans","Yu Gothic",system-ui,sans-serif; --mono:"JetBrains Mono",ui-monospace,Menlo,monospace;
+  --shadow:0 1px 2px rgba(20,30,60,.06),0 8px 24px rgba(20,30,60,.06);
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#0d1119; --paper:#161b26; --fg:#e4e8f0; --muted:#98a1b3; --line:#283042; --soft:#1b2130;
+  --primary:#4c93ff; --primary-soft:#172a4a; --ok:#3fbf75; --ok-soft:#14301f; --warn:#f0a53a; --warn-soft:#352812;
+  --bad:#ff7a52; --bad-soft:#3a1d14; --ai:#a591ff; --ai-soft:#251e45; --side:#0a0f1a; --side-fg:#aab4c7;
+  --shadow:0 1px 2px rgba(0,0,0,.3),0 8px 24px rgba(0,0,0,.25); color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0d1119; --paper:#161b26; --fg:#e4e8f0; --muted:#98a1b3; --line:#283042; --soft:#1b2130;
+  --primary:#4c93ff; --primary-soft:#172a4a; --ok:#3fbf75; --ok-soft:#14301f; --warn:#f0a53a; --warn-soft:#352812;
+  --bad:#ff7a52; --bad-soft:#3a1d14; --ai:#a591ff; --ai-soft:#251e45; --side:#0a0f1a; --side-fg:#aab4c7;
+  --shadow:0 1px 2px rgba(0,0,0,.3),0 8px 24px rgba(0,0,0,.25); color-scheme:dark}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--fg);font-family:var(--font);font-size:14px;line-height:1.6;margin:0;padding:32px 16px 64px}
+.wrap{max-width:1180px;margin:0 auto;display:grid;gap:48px}
+header.top{display:flex;flex-wrap:wrap;gap:16px;align-items:flex-end;justify-content:space-between}
+header.top h1{font-size:26px;margin:0;text-wrap:balance;letter-spacing:.01em}
+header.top p{margin:4px 0 0;color:var(--muted);max-width:62ch}
+.lang{display:inline-flex;border:1px solid var(--line);border-radius:8px;overflow:hidden;background:var(--paper)}
+.lang button{border:0;background:none;color:var(--muted);font:500 13px var(--font);padding:6px 14px;cursor:pointer}
+.lang button[aria-pressed="true"]{background:var(--primary);color:#fff}
+.lang button:focus-visible,.btn:focus-visible{outline:2px solid var(--primary);outline-offset:2px}
+.toc{display:flex;flex-wrap:wrap;gap:8px}
+.toc a{font-size:13px;color:var(--fg);text-decoration:none;border:1px solid var(--line);background:var(--paper);padding:4px 10px;border-radius:999px}
+.toc a:hover{border-color:var(--primary);color:var(--primary)}
+.toc b{font-family:var(--mono);font-weight:500;color:var(--muted);margin-right:6px}
+section.screen{display:grid;gap:14px;scroll-margin-top:16px}
+.cap{display:grid;grid-template-columns:auto 1fr;gap:4px 14px;align-items:baseline}
+.cap .id{font-family:var(--mono);font-size:13px;color:var(--primary);border:1px solid var(--primary);border-radius:6px;padding:1px 7px}
+.cap h2{margin:0;font-size:19px;text-wrap:balance}
+.cap p{grid-column:2;margin:0;color:var(--muted);max-width:75ch}
+.notes{grid-column:2;display:flex;flex-wrap:wrap;gap:6px;margin-top:4px}
+.notes span{font-size:12px;background:var(--soft);border:1px solid var(--line);border-radius:6px;padding:2px 8px;color:var(--muted)}
+/* app window */
+.win{background:var(--paper);border:1px solid var(--line);border-radius:12px;box-shadow:var(--shadow);overflow:hidden;min-width:0}
+.bar{display:flex;align-items:center;gap:8px;padding:8px 12px;border-bottom:1px solid var(--line);background:var(--soft)}
+.dots{display:flex;gap:5px}.dots i{width:9px;height:9px;border-radius:50%;background:var(--line);display:block}
+.url{font-family:var(--mono);font-size:12px;color:var(--muted);background:var(--paper);border:1px solid var(--line);border-radius:6px;padding:2px 10px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0}
+.app{display:grid;grid-template-columns:200px 1fr;min-height:420px}
+.side{background:var(--side);color:var(--side-fg);padding:14px 10px;display:grid;align-content:start;gap:2px;font-size:13px}
+.side .logo{color:#fff;font-weight:700;padding:4px 10px 14px;letter-spacing:.02em}
+.side a{display:flex;justify-content:space-between;align-items:center;padding:7px 10px;border-radius:6px;color:inherit;text-decoration:none}
+.side a.on{background:var(--primary);color:#fff}
+.side a.new{color:#fff}
+.side .grp{font-size:11px;letter-spacing:.08em;text-transform:uppercase;opacity:.55;padding:12px 10px 4px}
+.cnt{background:var(--bad);color:#fff;border-radius:999px;font-size:11px;padding:0 7px;line-height:18px;font-variant-numeric:tabular-nums}
+.main{padding:18px;display:grid;gap:14px;align-content:start;min-width:0}
+.ph{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:center;gap:10px}
+.ph h3{margin:0;font-size:17px}
+.btn{font:500 13px var(--font);border:1px solid var(--line);background:var(--paper);color:var(--fg);border-radius:6px;padding:5px 12px;cursor:pointer;white-space:nowrap}
+.btn.pri{background:var(--primary);border-color:var(--primary);color:#fff}
+.btn.ok{background:var(--ok);border-color:var(--ok);color:#fff}
+.btn.ghost{border-style:dashed}
+.btn.sm{padding:2px 9px;font-size:12px}
+.row{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.card{border:1px solid var(--line);border-radius:10px;background:var(--paper);min-width:0}
+.card>.hd{display:flex;flex-wrap:wrap;gap:8px;justify-content:space-between;align-items:center;padding:10px 14px;border-bottom:1px solid var(--line)}
+.card>.hd h4{margin:0;font-size:14px;display:flex;gap:8px;align-items:center}
+.card>.bd{padding:12px 14px;display:grid;gap:10px}
+.ai-badge{font-size:11px;font-weight:500;color:var(--ai);background:var(--ai-soft);border-radius:4px;padding:1px 6px;letter-spacing:.02em}
+.chip{display:inline-flex;align-items:center;gap:4px;font-size:12px;border-radius:4px;padding:1px 7px;white-space:nowrap}
+.c-bad{background:var(--bad-soft);color:var(--bad)}.c-warn{background:var(--warn-soft);color:var(--warn)}
+.c-ok{background:var(--ok-soft);color:var(--ok)}.c-pri{background:var(--primary-soft);color:var(--primary)}
+.c-ai{background:var(--ai-soft);color:var(--ai)}.c-mute{background:var(--soft);color:var(--muted);border:1px solid var(--line)}
+.grid2{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:14px}
+.grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+.kpi{border:1px solid var(--line);border-radius:8px;padding:10px 12px;display:grid;gap:2px}
+.kpi .n{font-size:22px;font-weight:700;font-variant-numeric:tabular-nums}
+.kpi .l{font-size:12px;color:var(--muted)}
+.summary{background:var(--ai-soft);border-radius:8px;padding:10px 12px;font-size:13px;line-height:1.7}
+ul.items{list-style:none;margin:0;padding:0;display:grid}
+ul.items li{display:grid;grid-template-columns:auto 1fr auto;gap:10px;align-items:center;padding:8px 0;border-top:1px dashed var(--line);font-size:13px}
+ul.items li:first-child{border-top:0}
+.sub{color:var(--muted);font-size:12px}
+.mono{font-family:var(--mono);font-size:12px}
+table{border-collapse:collapse;width:100%;font-size:13px}
+th,td{text-align:left;padding:8px 10px;border-bottom:1px solid var(--line);vertical-align:top}
+th{font-weight:500;color:var(--muted);font-size:12px;background:var(--soft);white-space:nowrap}
+td.num{font-variant-numeric:tabular-nums;text-align:right}
+.tbl{overflow-x:auto}
+.split{display:grid;grid-template-columns:minmax(0,1.1fr) minmax(0,1fr);gap:14px}
+.diff{display:grid;grid-template-columns:120px 1fr 1fr;border:1px solid var(--line);border-radius:8px;overflow:hidden;font-size:13px}
+.diff>div{padding:7px 10px;border-top:1px solid var(--line)}
+.diff>.h{background:var(--soft);color:var(--muted);font-size:12px;border-top:0}
+.diff .del{background:var(--bad-soft);text-decoration:line-through;text-decoration-color:var(--bad)}
+.diff .add{background:var(--ok-soft)}
+.src{border-left:3px solid var(--line);padding:4px 10px;font-size:12px;color:var(--muted);background:var(--soft);border-radius:0 6px 6px 0}
+.src b{color:var(--fg);font-weight:500}
+.vs{display:grid;grid-template-columns:1fr auto 1fr;gap:10px;align-items:stretch}
+.vs .q{border:1px solid var(--line);border-radius:8px;padding:10px 12px;font-size:13px;display:grid;gap:4px}
+.vs .arrow{align-self:center;color:var(--bad);font-weight:700}
+.doc{border:1px solid var(--line);border-radius:8px;padding:16px 18px;display:grid;gap:10px;font-size:13px;line-height:1.8}
+.doc h5{margin:0;font-size:13px;border-left:3px solid var(--primary);padding-left:8px}
+.doc p{margin:0}
+mark.bad{background:var(--bad-soft);color:var(--bad);border-bottom:2px solid var(--bad);padding:0 2px}
+mark.ok{background:none;color:inherit;border-bottom:1px dotted var(--ok)}
+.meter{height:8px;border-radius:99px;background:var(--soft);border:1px solid var(--line);overflow:hidden}
+.meter i{display:block;height:100%;background:var(--primary)}
+.meter.w i{background:var(--warn)}
+.tabs{display:flex;gap:18px;border-bottom:1px solid var(--line);font-size:13px}
+.tabs span{padding:8px 0;color:var(--muted)}
+.tabs span.on{color:var(--primary);border-bottom:2px solid var(--primary);font-weight:500}
+.drop{border:1.5px dashed var(--line);border-radius:10px;padding:14px;display:flex;flex-wrap:wrap;gap:10px;align-items:center;justify-content:space-between;background:var(--soft)}
+.file{display:flex;gap:8px;align-items:center;font-size:13px}
+.ftype{font-family:var(--mono);font-size:11px;border-radius:4px;padding:1px 6px;color:#fff;background:var(--ok)}
+.ftype.pdf{background:var(--bad)}.ftype.eml{background:var(--primary)}
+.foot{color:var(--muted);font-size:12px;border-top:1px solid var(--line);padding-top:16px}
+@media (max-width:820px){
+  .app{grid-template-columns:1fr}.side{display:none}
+  .split{grid-template-columns:1fr}.grid3{grid-template-columns:1fr 1fr}
+  .vs{grid-template-columns:1fr}.vs .arrow{justify-self:center;transform:rotate(90deg)}
+  .diff{grid-template-columns:90px 1fr 1fr}
+}
+@media (prefers-reduced-motion:no-preference){.btn,.toc a{transition:background .15s,border-color .15s,color .15s}}
+/* mockup-sharing additions: terminal, embedded fake mockup, version list, share page */
+.term{background:#0f1420;color:#d6dbe6;font-family:var(--mono);font-size:12.5px;line-height:1.7;padding:16px 18px;overflow-x:auto;white-space:pre}
+.term .p{color:#7aa2ff}.term .c{color:#8b93a6}.term .g{color:#5fd38d}.term .y{color:#f0c36a}.term .u{color:#7fd4ff;text-decoration:underline}
+.thumbs{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:12px}
+.thumb{border:1px solid var(--line);border-radius:10px;overflow:hidden;background:var(--paper);display:grid}
+.thumb .pv{height:120px;background:var(--soft);border-bottom:1px solid var(--line);padding:10px;display:grid;gap:5px;align-content:start}
+.thumb .pv i{display:block;height:8px;border-radius:3px;background:var(--line)}
+.thumb .pv i.b{background:var(--primary);opacity:.5;width:40%}
+.thumb .meta{padding:9px 11px;display:grid;gap:3px;font-size:13px}
+.thumb .meta b{font-weight:500}
+.thumb.add{place-items:center;border-style:dashed;color:var(--muted);font-size:13px;min-height:190px;text-align:center;padding:16px}
+.viewer{display:grid;grid-template-columns:minmax(0,1fr) 240px;min-height:470px}
+.vbar{display:flex;flex-wrap:wrap;gap:10px;align-items:center;justify-content:space-between;padding:10px 14px;border-bottom:1px solid var(--line)}
+.stage{background:repeating-conic-gradient(var(--soft) 0 25%,var(--paper) 0 50%) 0 0/18px 18px;padding:18px;display:grid;place-items:start center;min-width:0}
+.vers{border-left:1px solid var(--line);padding:12px;display:grid;gap:8px;align-content:start;font-size:13px}
+.ver{border:1px solid var(--line);border-radius:8px;padding:8px 10px;display:grid;gap:2px}
+.ver.on{border-color:var(--primary);background:var(--primary-soft)}
+.ver .t{display:flex;justify-content:space-between;gap:6px;align-items:center}
+.seg{display:inline-flex;border:1px solid var(--line);border-radius:6px;overflow:hidden}
+.seg span{padding:3px 10px;font-size:12px;color:var(--muted)}.seg span.on{background:var(--primary);color:#fff}
+/* the fake customer-facing page shown inside the iframe */
+.fake{width:100%;max-width:640px;background:#fff;color:#1f2430;border-radius:8px;box-shadow:0 6px 24px rgba(0,0,0,.12);overflow:hidden;font-size:12px;color-scheme:light}
+.fake .fh{background:#0b7a5c;color:#fff;padding:9px 14px;display:flex;justify-content:space-between;font-weight:500}
+.fake .fb{padding:12px 14px;display:grid;gap:10px}
+.fake .ff{display:flex;gap:6px;flex-wrap:wrap}
+.fake .ff span{border:1px solid #d7dde6;border-radius:5px;padding:3px 9px;background:#f7f9fb}
+.fake .ff span.on{background:#0b7a5c;color:#fff;border-color:#0b7a5c}
+.fake table{font-size:12px}.fake th{background:#f3f6f8;color:#5b6475}.fake td,.fake th{border-color:#e6eaf0;padding:6px 8px}
+.fake .st{border-radius:4px;padding:0 6px;font-size:11px}
+.fake .s1{background:#e6f6ec;color:#1f7a45}.fake .s2{background:#fff4e0;color:#a35f00}
+.fake .go{justify-self:end;background:#0b7a5c;color:#fff;border-radius:6px;padding:5px 14px;font-weight:500}
+.modal-bg{background:rgba(15,20,32,.45);padding:28px 16px;display:grid;place-items:center;min-height:420px}
+.modal{background:var(--paper);border-radius:12px;box-shadow:var(--shadow);width:100%;max-width:520px;display:grid}
+.modal .mh{padding:14px 18px;border-bottom:1px solid var(--line);display:flex;justify-content:space-between;font-weight:500}
+.modal .mb{padding:16px 18px;display:grid;gap:14px;font-size:13px}
+.modal .mf{padding:12px 18px;border-top:1px solid var(--line);display:flex;gap:8px;justify-content:flex-end}
+.field{display:grid;gap:5px}.field label{font-size:12px;color:var(--muted)}
+.input{border:1px solid var(--line);border-radius:6px;padding:6px 10px;display:flex;justify-content:space-between;gap:8px;align-items:center;min-width:0}
+.input .mono{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.switch{width:34px;height:18px;border-radius:99px;background:var(--ok);position:relative;flex:none}
+.switch::after{content:"";position:absolute;right:2px;top:2px;width:14px;height:14px;border-radius:50%;background:#fff}
+.share-top{display:flex;flex-wrap:wrap;gap:10px;justify-content:space-between;align-items:center;padding:10px 16px;border-bottom:1px solid var(--line);background:var(--paper)}
+.brand{display:flex;gap:8px;align-items:center;font-weight:700}
+.brand i{width:22px;height:22px;border-radius:6px;background:var(--primary);display:block}
+.callout{border:1px solid var(--line);border-left:3px solid var(--warn);border-radius:0 8px 8px 0;padding:10px 12px;font-size:13px;background:var(--paper)}
+@media (max-width:820px){.viewer{grid-template-columns:1fr}.vers{border-left:0;border-top:1px solid var(--line)}}
+/* pm-web real sidebar: light, DB-driven menu (platform_sys_menu, app pm-web-jp); designs page is hideInMenu under プロジェクト */
+.pmside{background:var(--paper);color:var(--fg);border-right:1px solid var(--line)}
+.pmside .logo{color:var(--fg);display:flex;gap:8px;align-items:center}
+.pmside .plogo{font-style:normal;font-weight:800;color:var(--primary);font-size:18px;line-height:1}
+.pmside a.on{background:var(--primary-soft);color:var(--primary);font-weight:500}
+.pmside.rail{padding:12px 6px;justify-items:center;gap:6px}
+.pmside.rail .plogo{font-size:22px;margin-bottom:10px}
+.pmside.rail span{width:40px;height:36px;display:grid;place-items:center;border-radius:8px;color:var(--muted);font-size:16px}
+.pmside.rail span.on{background:var(--soft);color:var(--fg)}
+/* two board kinds: .pen screen design (OpenPencil) and flow board (Excalidraw) */
+.newwrap{position:relative}
+.newmenu{position:absolute;right:0;top:calc(100% + 6px);width:260px;background:var(--paper);border:1px solid var(--line);border-radius:10px;box-shadow:var(--shadow);padding:6px;z-index:5;display:grid;gap:2px}
+.newmenu div{display:grid;gap:1px;padding:8px 10px;border-radius:6px;font-size:13px}
+.newmenu div:first-child{background:var(--soft)}
+.newmenu span{font-size:11.5px;color:var(--muted)}
+.penpv{background-color:#e9ebef !important;background-image:none !important}
+.penpv i{width:50px !important;height:42px !important;background:#fff !important;border:1px solid #d5dae3 !important;border-left:9px solid #1f3557 !important;border-radius:2px !important}
+.pened{display:grid;grid-template-columns:190px minmax(0,1fr) 270px;min-height:520px}
+.pl{border-right:1px solid var(--line);background:var(--paper);padding:10px 8px;display:grid;align-content:start;gap:1px;font-size:12.5px}
+.pl h5{margin:8px 6px 4px;font-size:11px;color:var(--muted);font-weight:500;letter-spacing:.04em}
+.pl .li{padding:4px 8px;border-radius:5px;display:flex;gap:6px;align-items:center;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.pl .li.on{background:var(--soft);font-weight:500}
+.pl .li.sel{background:var(--primary-soft);color:var(--primary)}
+.pl .li.sub2{padding-left:24px;color:var(--muted);font-size:11.5px}
+.dot{width:7px;height:7px;border-radius:50%;display:block;flex:none}
+.dot.ok{background:var(--ok)}.dot.bad{background:var(--bad)}.dot.warn{background:var(--warn)}.dot.mute{background:var(--line);border:1px solid var(--muted)}
+.pc{position:relative;background:#e9ebef;overflow:hidden;min-width:0;color-scheme:light}
+.ptools{position:absolute;left:50%;bottom:14px;transform:translateX(-50%);display:flex;gap:2px;background:#1f2430;border-radius:10px;padding:4px;z-index:3}
+.ptools i{font-style:normal;color:#c9cfdb;width:30px;height:28px;display:grid;place-items:center;border-radius:6px;font-size:13px}
+.ptools i.on{background:#1677ff;color:#fff}
+.pframes{display:flex;flex-wrap:wrap;gap:34px 28px;padding:34px 28px 70px;align-content:flex-start}
+.pf{width:210px;display:grid;gap:5px;position:relative}
+.pfl{display:flex;justify-content:space-between;gap:6px;font-size:11px;color:#5b6475;align-items:center}
+.pf .ui{height:132px;background:#fff;border:1px solid #d5dae3;border-radius:0}
+.pf.on .ui{outline:1.5px solid #1677ff;outline-offset:0}
+.pf.on .pfl span:first-child{color:#1677ff;font-weight:500}
+.pf .sz{justify-self:center;font-size:10px;background:#1677ff;color:#fff;border-radius:3px;padding:0 5px}
+.pc .zoom{color:#5b6475;background:#fff;border-color:#d5dae3}
+@media (max-width:820px){.pened{grid-template-columns:1fr}.pl{display:none}.insp{border-left:0}}
+/* design-board additions: fake infinite canvas, screen frames, stickies, pins, inspector */
+.impl{font-size:11px;border-radius:4px;padding:1px 7px;font-weight:500}
+.impl.done{background:var(--ok-soft);color:var(--ok)}.impl.new{background:var(--primary-soft);color:var(--primary)}.impl.chk{background:var(--warn-soft);color:var(--warn)}
+.wsbar{display:flex;flex-wrap:wrap;gap:8px;align-items:center;justify-content:space-between;padding:8px 12px;border-bottom:1px solid var(--line);background:var(--paper)}
+.wsbar .t{display:flex;gap:8px;align-items:center;font-weight:500;min-width:0}
+.seg{display:inline-flex;border:1px solid var(--line);border-radius:6px;overflow:hidden}
+.seg span{font-size:12px;padding:3px 10px;color:var(--muted)}
+.seg span.on{background:var(--primary);color:#fff}
+.ws{display:grid;grid-template-columns:minmax(0,1fr) 300px;min-height:540px}
+.ws.full{grid-template-columns:minmax(0,1fr)}
+.cvwrap{overflow:auto;background:var(--soft);position:relative;min-width:0}
+.cv{position:relative;width:850px;height:540px;background-image:radial-gradient(var(--line) 1.1px,transparent 1.2px);background-size:16px 16px}
+.cv svg.lines{position:absolute;inset:0;width:100%;height:100%;pointer-events:none}
+.tools{position:absolute;left:50%;top:12px;transform:translateX(-50%);display:flex;gap:2px;background:var(--paper);border:1px solid var(--line);border-radius:10px;padding:4px;box-shadow:var(--shadow);z-index:3}
+.tools i{font-style:normal;font-size:13px;width:30px;height:28px;display:grid;place-items:center;border-radius:6px;color:var(--muted)}
+.tools i.on{background:var(--primary-soft);color:var(--primary)}
+.tools .sep{width:1px;background:var(--line);margin:4px 3px}
+.tools .add{width:auto;padding:0 10px;color:var(--primary);font-size:12px;font-weight:500;gap:4px;display:flex;align-items:center}
+.zoom{position:absolute;left:12px;bottom:12px;background:var(--paper);border:1px solid var(--line);border-radius:8px;font-size:12px;padding:3px 10px;color:var(--muted);z-index:3}
+.mini-map{position:absolute;right:12px;bottom:12px;width:120px;height:70px;background:var(--paper);border:1px solid var(--line);border-radius:8px;z-index:3;overflow:hidden}
+.mini-map i{position:absolute;background:var(--line);border-radius:2px}
+.mini-map b{position:absolute;inset:8px 30px 14px 10px;border:1.5px solid var(--primary);border-radius:3px}
+/* a UI screen frame on the canvas (image exported from .pen) */
+.scr{position:absolute;width:180px;background:var(--paper);border:1px solid var(--line);border-radius:8px;box-shadow:0 2px 6px rgba(20,30,60,.08);display:grid;gap:6px;padding:6px 7px 7px;z-index:2}
+.scr.sel{outline:2px solid var(--primary);outline-offset:3px}
+.scr.ghost{border:1.5px dashed var(--muted);background:transparent;box-shadow:none}
+.scr .nm{display:flex;justify-content:space-between;gap:6px;font-size:11px;font-weight:500;align-items:center}
+.scr .nm span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.st{font-size:10px;border-radius:99px;padding:0 7px;line-height:17px;white-space:nowrap;font-weight:500}
+.st.ok{background:var(--ok-soft);color:var(--ok)}.st.bad{background:var(--bad-soft);color:var(--bad)}.st.warn{background:var(--warn-soft);color:var(--warn)}.st.mute{background:var(--soft);color:var(--muted);border:1px solid var(--line)}
+.ui{height:104px;border-radius:4px;background:#f4f7fb;border:1px solid #e3e9f2;display:grid;grid-template-columns:22px 1fr;gap:5px;padding:5px;color-scheme:light}
+.ui .sd{background:#1f3557;border-radius:3px}
+.ui .bd{display:grid;gap:4px;align-content:start}
+.ui .bd i{display:block;height:7px;border-radius:2px;background:#fff;border:1px solid #e1e7f0}
+.ui .bd i.h{background:#c9d8ee;border:0;width:55%}
+.ui .bd i.btn{width:34%;background:#1677ff;border:0;justify-self:end}
+.ui .bd i.f{height:16px}
+.ui .bd i.r{background:#ffe1d6;border-color:#ffb9a1}
+.scr .ft{display:flex;flex-wrap:wrap;gap:4px;align-items:center;font-size:10px;color:var(--muted)}
+.tk{font-size:10px;color:var(--primary);background:var(--primary-soft);border-radius:4px;padding:0 5px;white-space:nowrap}
+.src-tag{font-family:var(--mono);font-size:9.5px;color:var(--muted)}
+.sticky{position:absolute;width:170px;background:#ffe49b;color:#5c430a;border-radius:3px;padding:9px 10px;font-size:11.5px;line-height:1.55;box-shadow:0 3px 8px rgba(120,90,10,.18);z-index:2;color-scheme:light}
+.sticky.pink{background:#ffd3dc;color:#6b1f30}
+.sticky .by{display:block;font-size:10px;opacity:.7;margin-top:4px}
+.dia{position:absolute;width:96px;height:96px;z-index:2;display:grid;place-items:center}
+.dia::before{content:"";position:absolute;inset:14px;background:var(--paper);border:1.5px solid #8a94a6;transform:rotate(45deg);border-radius:6px}
+.dia span{position:relative;font-size:11px;text-align:center;line-height:1.35}
+.endn{position:absolute;background:#e4e9ef;border:1.5px solid #98a3b4;border-radius:999px;font-size:11px;padding:8px 14px;color:#344256;z-index:2;color-scheme:light}
+.lbl{position:absolute;font-size:10.5px;color:#2f6fdc;background:var(--soft);padding:0 4px;z-index:2}
+.pin{position:absolute;width:22px;height:22px;border-radius:50% 50% 50% 0;background:var(--bad);color:#fff;font-size:11px;font-weight:700;display:grid;place-items:center;transform:rotate(-45deg);z-index:4;box-shadow:0 2px 5px rgba(0,0,0,.25)}
+.pin b{transform:rotate(45deg)}
+.pin.done{background:var(--ok)}
+.ai-mark{position:absolute;font-size:10px;color:var(--ai);background:var(--ai-soft);border-radius:4px;padding:1px 6px;z-index:3}
+/* right inspector */
+.insp{border-left:1px solid var(--line);background:var(--paper);display:grid;align-content:start;font-size:13px;min-width:0}
+.insp .sec{padding:12px 14px;border-bottom:1px solid var(--line);display:grid;gap:8px}
+.insp h5{margin:0;font-size:12px;color:var(--muted);font-weight:500;display:flex;justify-content:space-between;align-items:center}
+.kv{display:grid;grid-template-columns:72px 1fr;gap:5px 10px;font-size:12.5px}
+.kv dt{color:var(--muted)}.kv dd{margin:0;min-width:0;overflow:hidden;text-overflow:ellipsis}
+.sel-st{display:flex;flex-wrap:wrap;gap:6px}
+.sel-st span{font-size:12px;border:1px solid var(--line);border-radius:6px;padding:2px 9px;color:var(--muted)}
+.sel-st span.on{border-color:var(--bad);color:var(--bad);background:var(--bad-soft);font-weight:500}
+.tkrow{display:flex;justify-content:space-between;gap:8px;align-items:center;font-size:12.5px;padding:6px 8px;border:1px solid var(--line);border-radius:6px}
+.tkrow .who{font-size:11px;color:var(--muted)}
+.warnbox{background:var(--warn-soft);color:var(--warn);border-radius:6px;padding:7px 9px;font-size:12px;line-height:1.6}
+/* comments */
+.cmt{display:grid;gap:4px;padding:10px 0;border-top:1px dashed var(--line);font-size:12.5px}
+.cmt:first-child{border-top:0}
+.cmt .h{display:flex;gap:6px;align-items:center;font-size:11.5px;color:var(--muted)}
+.cmt .n{width:18px;height:18px;border-radius:50%;background:var(--bad);color:#fff;font-size:10px;font-weight:700;display:grid;place-items:center;flex:none}
+.cmt .n.done{background:var(--ok)}
+.cmt .rep{margin-left:24px;border-left:2px solid var(--line);padding-left:8px;color:var(--muted)}
+.decide{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.decide .btn{text-align:center}
+.btn.bad{border-color:var(--bad);color:var(--bad)}
+/* list cards */
+.bcards{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:14px}
+.bcard{border:1px solid var(--line);border-radius:10px;overflow:hidden;background:var(--paper);display:grid}
+.bcard .pv{height:130px;position:relative;background-color:var(--soft);background-image:radial-gradient(var(--line) 1px,transparent 1.1px);background-size:10px 10px;border-bottom:1px solid var(--line);overflow:hidden}
+.bcard .pv i{position:absolute;background:var(--paper);border:1px solid var(--line);border-radius:3px;width:46px;height:38px}
+.bcard .pv i.y{background:#ffe49b;border:0;width:34px;height:26px}
+.bcard .pv s{position:absolute;height:1.5px;background:#3185ff}
+.bcard .meta{padding:10px 12px;display:grid;gap:6px;font-size:13px}
+.bcard .meta b{font-weight:500}
+.prog{display:flex;height:6px;border-radius:99px;overflow:hidden;background:var(--soft)}
+.prog i{display:block;height:100%}
+.legend{display:flex;flex-wrap:wrap;gap:10px;font-size:11.5px;color:var(--muted)}
+.legend span{display:inline-flex;gap:4px;align-items:center}
+.legend i{width:8px;height:8px;border-radius:2px;display:block}
+/* frame picker */
+.frames{display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:10px}
+.frm{border:1px solid var(--line);border-radius:8px;padding:6px;display:grid;gap:5px;font-size:11.5px;position:relative}
+.frm.on{border-color:var(--primary);box-shadow:0 0 0 2px var(--primary-soft)}
+.frm .ui{height:70px}
+.frm .ck{position:absolute;top:8px;right:8px;width:16px;height:16px;border-radius:4px;border:1.5px solid var(--line);background:var(--paper)}
+.frm.on .ck{background:var(--primary);border-color:var(--primary)}
+.frm.on .ck::after{content:"";position:absolute;left:4px;top:1px;width:4px;height:8px;border:solid #fff;border-width:0 2px 2px 0;transform:rotate(45deg)}
+.modal.wide{max-width:720px}
+/* compare */
+.cmp{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.cmp .side-v{display:grid;gap:8px}
+.cmp .ui{height:230px;grid-template-columns:40px 1fr;padding:10px;gap:10px}
+.cmp .ui .bd{gap:9px}.cmp .ui .bd i{height:14px}.cmp .ui .bd i.f{height:30px}
+.hl{outline:2px dashed var(--bad);outline-offset:2px}
+.hl.add{outline-color:var(--ok)}
+.changes{display:grid;gap:6px;font-size:12.5px}
+.changes li{display:flex;gap:8px;align-items:baseline}
+@media (max-width:820px){.ws{grid-template-columns:1fr}.insp{border-left:0;border-top:1px solid var(--line)}.cmp{grid-template-columns:1fr}}
+</style>
+
+<div class="wrap">
+  <header class="top">
+    <div>
+      <h1 data-i="设计流程板 · 效果图|Design board · Screens">デザインボード · 画面イメージ</h1>
+      <p data-i="设计板分两种：① 画面设计（.pen）——像 Figma，用 OpenPencil 在浏览器里直接看和改 .pen 原文件，画框上挂任务和审核状态；② 业务流程板——像 FigJam，用 Excalidraw 把 .pen 里的画面摆出来、连箭头、贴便签。同事也可以让 Claude Code / Codex 通过 MCP 直接画。8 个画面，样例数据为虚构。|Two kinds of design board: (1) Screen design (.pen) — Figma-like; open and edit the .pen source in the browser with OpenPencil, with tasks and review status on each frame; (2) Flow board — FigJam-like; lay out screens from the .pen in Excalidraw, connect them and add notes. Teammates can also draw from Claude Code / Codex via MCP. Eight screens; sample data is fictional.">デザインボードは 2 種類：① 画面デザイン（.pen）—— Figma のように、OpenPencil でブラウザ上で .pen 原文を見て・直す。フレームにタスクとレビュー状態を持たせる。② 業務フローボード —— FigJam のように、Excalidraw で .pen の画面を並べ、矢印でつなぎ、付箋を貼る。Claude Code / Codex から MCP で直接描くこともできる。全 8 画面、サンプルデータは架空。</p>
+    </div>
+    <div class="lang" role="group" aria-label="Language">
+      <button type="button" data-l="ja" aria-pressed="true">日本語</button>
+      <button type="button" data-l="zh" aria-pressed="false">中文</button>
+      <button type="button" data-l="en" aria-pressed="false">EN</button>
+    </div>
+  </header>
+
+  <div class="legend">
+    <span><b class="impl done" data-i="已实装|Built">実装済</b><span data-i="今天的 MVP 已有（工作树未提交）|In today's MVP (uncommitted)">本日の MVP にあり（未コミット）</span></span>
+    <span><b class="impl new" data-i="新增|New">新規</b><span data-i="这次要做|To build now">今回つくる</span></span>
+    <span><b class="impl chk" data-i="需验证|Verify">要検証</b><span data-i="依赖外部工具，先验证再做|Depends on external tools; verify first">外部ツール依存、先に検証</span></span>
+  </div>
+
+  <nav class="toc" aria-label="screens">
+    <a href="#d1"><b>D1</b><span data-i="项目页 · 设计板页签|Project · Design board tab">プロジェクト · デザインボード</span></a>
+    <a href="#d2"><b>D2</b><span data-i="画面设计（.pen）· OpenPencil|Screen design (.pen) · OpenPencil">画面デザイン（.pen）</span></a>
+    <a href="#d3"><b>D3</b><span data-i="业务流程板 · 编辑|Flow board · Edit">業務フロー · 編集</span></a>
+    <a href="#d4"><b>D4</b><span data-i="业务流程板 · 审核|Flow board · Review">業務フロー · レビュー</span></a>
+    <a href="#d5"><b>D5</b><span data-i="往流程板添加画面|Add screens to a flow board">フローに画面を追加</span></a>
+    <a href="#d6"><b>D6</b><span data-i="画面版本对比|Compare screen versions">画面の版比較</span></a>
+    <a href="#d7"><b>D7</b><span data-i="任务详情 · 设计标签|Task detail · Design tab">タスク詳細 · デザイン</span></a>
+    <a href="#d8"><b>D8</b><span data-i="从 Claude Code 画|Draw from Claude Code">Claude Code から描く</span></a>
+  </nav>
+
+  <!-- D1 -->
+  <section class="screen" id="d1">
+    <div class="cap">
+      <span class="id">D1</span><h2 data-i="项目页 ·「设计板」页签|Project page · Design board tab">プロジェクト画面 ·「デザインボード」タブ</h2>
+      <p data-i="入口放在项目页的页签行：WBS / 看板 / 日程 之后加「设计板」（URL 沿用 ?tab=design）。侧栏不加菜单；去掉页头现有的设计图标按钮。页签里两种设计板混排（可按类型筛选），画面设计卡片显示画框审核进度，点卡片全屏打开（.pen → D2，流程板 → D3）。|The entry sits in the project page tab row: after WBS / Board / Schedule comes “Design board” (URL keeps the ?tab= pattern: ?tab=design). No sidebar item; the existing header icon button is removed. The tab lists both kinds (filterable by type); screen-design cards show per-frame review progress; clicking one opens it full-screen (.pen → D2, flow board → D3).">入口はプロジェクト画面のタブ行：WBS / ボード / スケジュール の後ろに「デザインボード」（URL は既存の ?tab= に合わせ ?tab=design）。サイドバーにメニューは足さず、ヘッダの既存デザインアイコンボタンは外す。タブには 2 種類のボードを並べ（種類で絞り込み可）、画面デザインのカードにはフレームごとのレビュー進捗を出す。カードをクリックで全画面で開く（.pen → D2、業務フロー → D3）。</p>
+      <div class="notes"><span class="impl done" data-i="列表 / 新建 / 删除（现为独立页 /designs）|List / create / delete (separate /designs page today)">一覧・新規・削除（現状は別ページ /designs）</span><span class="impl new" data-i="移入页签 ?tab=design|Move into tab ?tab=design">タブ ?tab=design に移す</span><span class="impl new" data-i="缩略图（保存时前端导出 PNG）|Thumbnail (PNG exported on save)">サムネイル（保存時にフロントで PNG 書き出し）</span><span class="impl new" data-i="画面审核进度|Screen review progress">画面レビュー進捗</span></div>
+    </div>
+    <div class="win">
+      <div class="bar"><div class="dots"><i></i><i></i><i></i></div><div class="url">pm.example.com/projects/lms-2026/gantt?tab=design</div></div>
+      <div class="app" style="grid-template-columns:56px 1fr">
+        <nav class="side pmside rail">
+          <i class="plogo">P</i>
+          <span title="俯瞰">◔</span><span title="カレンダー">▦</span><span class="on" title="プロジェクト">▣</span><span title="品質管理">⛉</span><span title="リソース">☺</span><span title="顧客 / 製品">▥</span><span title="通知">♢</span>
+        </nav>
+        <div class="main">
+          <div class="sub">プロジェクト管理 / LMS 2026 改修</div>
+          <div class="ph" style="justify-content:flex-start">
+            <span class="sub" style="font-size:16px">‹</span><h3 style="font-size:20px">学生管理機能</h3><span class="chip c-pri">進行中</span>
+            <span class="sub" style="border-left:1px solid var(--line);padding-left:12px">2026/09/15 ～ 2026/11/30</span>
+            <span class="meter" style="width:120px"><i style="width:40%"></i></span><span class="sub">40%</span>
+          </div>
+          <div class="tabs" style="justify-content:space-between;align-items:center">
+            <div style="display:flex;gap:28px"><span>WBS</span><span data-i="看板|Board">ボード</span><span data-i="日程|Schedule">スケジュール</span><span class="on" data-i="设计板|Design board">デザインボード</span></div>
+            <div class="row" style="padding-bottom:6px">
+              <div class="seg"><span class="on" data-i="全部|All">すべて</span><span data-i="画面设计|Screen design">画面デザイン</span><span data-i="业务流程|Flow">業務フロー</span><span data-i="待我审核 2|Waiting on me 2">自分のレビュー待ち 2</span></div>
+              <div class="newwrap"><button class="btn pri" type="button" data-i="+ 新建 ▾|+ New ▾">＋ 新規 ▾</button><div class="newmenu"><div><b data-i="画面设计（.pen）|Screen design (.pen)">画面デザイン（.pen）</b><span data-i="上传 .pen，用 OpenPencil 打开|Upload a .pen, open in OpenPencil">.pen をアップロードして OpenPencil で開く</span></div><div><b data-i="业务流程板|Flow board">業務フローボード</b><span data-i="空白板，用 Excalidraw 画流程|Blank board, draw the flow in Excalidraw">空のボードに Excalidraw でフローを描く</span></div></div></div>
+            </div>
+          </div>
+          <div class="bcards">
+            <div class="bcard">
+              <div class="pv penpv"><i style="left:14px;top:20px"></i><i style="left:74px;top:20px"></i><i style="left:134px;top:20px"></i><i style="left:194px;top:20px"></i><i style="left:14px;top:74px"></i><i style="left:74px;top:74px"></i></div>
+              <div class="meta"><div class="row"><span class="chip c-ai" data-i="画面设计 .pen|Screen design .pen">画面デザイン .pen</span></div><b>lms.pen</b>
+                <div class="prog"><i style="width:20%;background:var(--ok)"></i><i style="width:20%;background:var(--bad)"></i><i style="width:20%;background:var(--warn)"></i><i style="width:40%;background:var(--line)"></i></div>
+                <div class="row sub"><span class="st ok">承認 1</span><span class="st bad">要修正 1</span><span class="st warn">レビュー待ち 1</span><span class="st mute">下書き 2</span></div>
+                <div class="sub">v4 · 10/20 ノミン · <span data-i="画框 5 · 任务 5|5 frames · 5 tasks">フレーム 5 · タスク 5</span></div>
+              </div>
+            </div>
+            <div class="bcard">
+              <div class="pv"><i style="left:14px;top:22px"></i><s style="left:60px;top:40px;width:22px"></s><i style="left:82px;top:22px"></i><s style="left:128px;top:40px;width:22px"></s><i style="left:150px;top:22px"></i><i class="y" style="left:20px;top:80px"></i><i class="y" style="left:90px;top:84px"></i><i style="left:190px;top:80px;border-style:dashed"></i></div>
+              <div class="meta"><div class="row"><span class="chip c-pri" data-i="业务流程|Flow">業務フロー</span></div><b>学生管理フロー</b>
+                <div class="sub" data-i="引用 lms.pen 的 4 个画框 · 箭头 5 · 便签 2|4 frames from lms.pen · 5 arrows · 2 notes">lms.pen のフレーム 4 · 矢印 5 · 付箋 2</div>
+                <div class="sub">r12 · 10/20 ノミン</div>
+              </div>
+            </div>
+            <div class="bcard">
+              <div class="pv"><i style="left:20px;top:18px"></i><i style="left:20px;top:72px"></i><s style="left:66px;top:36px;width:40px"></s><i style="left:106px;top:18px"></i><i style="left:160px;top:46px"></i><i class="y" style="left:110px;top:84px"></i></div>
+              <div class="meta"><div class="row"><span class="chip c-pri" data-i="业务流程|Flow">業務フロー</span></div><b>課程管理フロー</b>
+                <div class="sub" data-i="引用 lms.pen 的 5 个画框 · 箭头 3 · 便签 1|5 frames from lms.pen · 3 arrows · 1 note">lms.pen のフレーム 5 · 矢印 3 · 付箋 1</div>
+                <div class="sub">r6 · 10/19 Claude Code（ノミン）</div>
+              </div>
+            </div>
+            <div class="bcard" style="place-items:center;border-style:dashed;color:var(--muted);font-size:13px;min-height:230px;text-align:center;padding:16px" data-i="画面设计：上传 .pen · 业务流程：从空白板开始|Screen design: upload a .pen · Flow: start from a blank board">画面デザイン：.pen をアップロード · 業務フロー：空のボードから</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- D2 -->
+  <section class="screen" id="d2">
+    <div class="cap">
+      <span class="id">D2</span><h2 data-i="画面设计（.pen）· OpenPencil|Screen design (.pen) · OpenPencil">画面デザイン（.pen）· OpenPencil</h2>
+      <p data-i="像 Figma：.pen 原文件在浏览器里用 OpenPencil 打开，左边页面和图层，中间画布，右边属性，可以直接改。保存＝作为新版本上传（原文件按字节保存，不转换）。右栏多一个「任务・审核」页签：给画框绑定任务、设审核状态。画面的业务属性挂在画框上，业务流程板引用画框时直接显示这些属性。|Figma-like: the .pen source opens in the browser with OpenPencil — pages and layers on the left, canvas in the middle, properties on the right — and can be edited directly. Saving uploads a new version (bytes stored as-is). The right panel gets an extra “Tasks · Review” tab to link tasks and set review status per frame. Business attributes live on the frame; flow boards that reference a frame simply show them.">Figma のように、.pen 原文をブラウザ上の OpenPencil で開く。左にページとレイヤー、中央にキャンバス、右にプロパティ。その場で直せる。保存＝新しい版としてアップロード（原文はバイトのまま保存、変換しない）。右パネルに「タスク・レビュー」タブを足し、フレームにタスクを紐付け、レビュー状態を付ける。画面の業務属性はフレームが持ち、業務フローボードはフレームを参照してそれを表示するだけ。</p>
+      <div class="notes"><span class="impl done" data-i=".pen 原文上传 · 版本 · 下载|.pen upload · versions · download">.pen アップロード・版・ダウンロード</span><span class="impl chk" data-i="嵌入 OpenPencil（Vue SDK 挂进 React 页 / CanvasKit 自托管 / 保存无损）|Embed OpenPencil (Vue SDK in a React page / self-hosted CanvasKit / lossless save)">OpenPencil の組み込み（Vue SDK を React 画面に載せる／CanvasKit 自前ホスト／保存の無損失）</span><span class="impl new" data-i="画框 ⇄ 任务 · 审核状态|Frame ⇄ tasks · review status">フレーム ⇄ タスク・レビュー状態</span></div>
+    </div>
+    <div class="win">
+      <div class="bar"><div class="dots"><i></i><i></i><i></i></div><div class="url">pm.example.com/projects/lms-2026/gantt?tab=design&amp;open=lms.pen</div></div>
+      <div class="wsbar">
+        <div class="t"><button class="btn sm" type="button">←</button><span>lms.pen</span><span class="chip c-ai" data-i="画面设计|Screen design">画面デザイン</span><span class="sub">v4 · 10/20 ノミン · <span data-i="有未保存的修改|Unsaved changes">未保存の変更あり</span></span></div>
+        <div class="row">
+          <div class="seg"><span class="on" data-i="编辑|Edit">編集</span><span data-i="审核|Review">レビュー</span></div>
+          <button class="btn sm" type="button" data-i="下载 .pen|Download .pen">.pen をダウンロード</button>
+          <button class="btn sm" type="button" data-i="上传新版本|Upload new version">新しい版をアップロード</button>
+          <button class="btn sm pri" type="button" data-i="保存为 v5|Save as v5">v5 として保存</button>
+        </div>
+      </div>
+      <div class="pened">
+        <aside class="pl">
+          <h5 data-i="页面|Pages">ページ</h5>
+          <div class="li on">学生管理</div><div class="li">課程管理</div><div class="li">共通部品</div>
+          <h5 data-i="图层|Layers">レイヤー</h5>
+          <div class="li"><i class="dot ok"></i>W02-01 学生一覧</div>
+          <div class="li sel"><i class="dot bad"></i>W04-02 学生詳細</div>
+          <div class="li sub2">├ Header</div><div class="li sub2">├ ProfileCard</div><div class="li sub2">└ ErrorBanner</div>
+          <div class="li"><i class="dot mute"></i>W04-03 学生編集</div>
+          <div class="li"><i class="dot warn"></i>W05-01 承認</div>
+          <div class="li"><i class="dot mute"></i>W05-02 承認完了</div>
+        </aside>
+        <div class="pc">
+          <div class="ptools"><i class="on">↖</i><i>#</i><i>▢</i><i>◯</i><i>T</i><i>✎</i><i>✋</i></div>
+          <div class="pframes">
+            <div class="pf"><div class="pfl"><span>W02-01 学生一覧</span><span class="st ok">承認</span></div><div class="ui"><div class="sd"></div><div class="bd"><i class="h"></i><i class="f"></i><i></i><i></i><i></i><i></i></div></div></div>
+            <div class="pf on"><div class="pfl"><span>W04-02 学生詳細</span><span class="st bad">要修正</span></div><div class="ui"><div class="sd"></div><div class="bd"><i class="h"></i><i></i><i class="r"></i><i></i><i class="f"></i><i class="btn"></i></div></div><span class="sz">1440 × 900</span></div>
+            <div class="pf"><div class="pfl"><span>W04-03 学生編集</span><span class="st mute">下書き</span></div><div class="ui"><div class="sd"></div><div class="bd"><i class="h"></i><i class="f"></i><i class="f"></i><i class="btn"></i></div></div></div>
+            <div class="pf"><div class="pfl"><span>W05-01 承認</span><span class="st warn">レビュー待ち</span></div><div class="ui"><div class="sd"></div><div class="bd"><i class="h"></i><i class="f"></i><i></i><i class="btn"></i></div></div></div>
+          </div>
+          <div class="zoom">− 50% +</div>
+        </div>
+        <aside class="insp">
+          <div class="sec" style="padding-bottom:0"><div class="tabs"><span data-i="设计|Design">デザイン</span><span class="on" data-i="任务 · 审核|Tasks · Review">タスク・レビュー</span></div>
+            <div class="sub" style="padding-bottom:8px" data-i="「设计」= OpenPencil 自带属性面板|“Design” = OpenPencil's own properties panel">「デザイン」＝ OpenPencil 標準のプロパティパネル</div></div>
+          <div class="sec"><h5 data-i="画框|Frame">フレーム</h5><div style="font-weight:500">W04-02 学生詳細</div></div>
+          <div class="sec"><h5 data-i="审核状态（与任务状态分开）|Review status (separate from task)">レビュー状態（タスク状態とは別）</h5>
+            <div class="sel-st"><span data-i="草稿|Draft">下書き</span><span data-i="待审核|In review">レビュー待ち</span><span class="on" data-i="要修改|Changes">要修正</span><span data-i="已通过|Approved">承認</span></div>
+            <div class="sub" data-i="10/20 山田 · 未解决评论 2|Yamada 10/20 · 2 open comments">10/20 山田 · 未解決コメント 2</div>
+          </div>
+          <div class="sec"><h5><span data-i="关联任务|Linked tasks">紐付けタスク</span><button class="btn sm" type="button">＋</button></h5>
+            <div class="tkrow"><span>#102 学生詳細画面</span><span class="who">開発中 · 佐藤</span></div>
+            <div class="tkrow"><span>#118 学生詳細 API</span><span class="who">未着手 · 李</span></div>
+          </div>
+          <div class="sec"><h5 data-i="被引用于|Used in">使われているフロー</h5>
+            <div class="tkrow"><span>学生管理フロー</span><span class="who">r12 · v3 <span data-i="（旧）|(old)">（旧）</span></span></div>
+          </div>
+        </aside>
+      </div>
+    </div>
+  </section>
+
+  <!-- D3 -->
+  <section class="screen" id="d3">
+    <div class="cap">
+      <span class="id">D3</span><h2 data-i="业务流程板 · 编辑|Flow board · Edit">業務フローボード · 編集</h2>
+      <p data-i="像 FigJam：白板沿用已经集成好的 Excalidraw（拖拽、缩放、框选、箭头绑定、便签都已有）。新增「UI 画面」元素：它引用 .pen 里的某个画框（显示该画框某一版的图），任务和审核状态跟着画框走，在这里改和在 D2 改是同一份。|FigJam-like: the canvas stays the Excalidraw we already integrated (drag, zoom, marquee, bound arrows, notes). New is a “UI screen” element that references a frame in a .pen (showing a given version's image); tasks and review status belong to the frame, so editing here or in D2 is the same data.">FigJam のように、キャンバスは組み込み済みの Excalidraw をそのまま使う（ドラッグ・ズーム・範囲選択・矢印の吸着・付箋は既にある）。新しいのは「UI 画面」要素：.pen のフレームを参照し（そのフレームのある版の画像を表示）、タスクとレビュー状態はフレーム側が持つ。ここで変えても D2 で変えても同じデータ。</p>
+      <div class="notes"><span class="impl done" data-i="Excalidraw 白板 · 保存 · 冲突检测 · 版本|Excalidraw canvas · save · conflict check · revisions">Excalidraw キャンバス・保存・競合検知・版</span><span class="impl new" data-i="UI 画面元素 = 引用 .pen 画框|UI screen element = reference to a .pen frame">UI 画面要素 ＝ .pen フレームの参照</span><span class="impl new" data-i="画面 ⇄ 多任务|Screen ⇄ many tasks">画面 ⇄ 複数タスク</span><span class="impl new" data-i="设计状态与任务状态分开|Design status separate from task status">デザイン状態はタスク状態と別</span></div>
+    </div>
+    <div class="win">
+      <div class="bar"><div class="dots"><i></i><i></i><i></i></div><div class="url">pm.example.com/projects/lms-2026/gantt?tab=design&amp;open=学生管理フロー</div></div>
+      <div class="wsbar">
+        <div class="t"><button class="btn sm" type="button">←</button><span>学生管理フロー</span><span class="sub">r12 · <span data-i="已保存|Saved">保存済み</span></span></div>
+        <div class="row">
+          <div class="seg"><span class="on" data-i="编辑|Edit">編集</span><span data-i="审核|Review">レビュー</span></div>
+          <button class="btn sm" type="button" data-i="r11 对比|Compare r11">r11 と比較</button>
+          <button class="btn sm pri" type="button" data-i="保存 ⌘S|Save ⌘S">保存 ⌘S</button>
+        </div>
+      </div>
+      <div class="ws">
+        <div class="cvwrap"><div class="cv">
+          <div class="tools"><i>✋</i><i class="on">↖</i><i>▢</i><i>◇</i><i>→</i><i>T</i><i>🗒</i><span class="sep"></span><i class="add" data-i="+ 添加画面|+ Add screens">＋ 画面を追加</i></div>
+          <svg class="lines" viewBox="0 0 850 540" aria-hidden="true">
+            <defs><marker id="ah" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="#3185ff"/></marker></defs>
+            <g fill="none" stroke="#3185ff" stroke-width="2" stroke-linecap="round">
+              <path d="M212 170 H288" marker-end="url(#ah)"/>
+              <path d="M472 170 H500" marker-end="url(#ah)"/>
+              <path d="M596 170 H636" marker-end="url(#ah)"/>
+              <path d="M548 218 V328" marker-end="url(#ah)"/>
+              <path d="M730 270 V338" marker-end="url(#ah)"/>
+            </g>
+          </svg>
+          <div class="scr" style="left:30px;top:80px"><div class="nm"><span>W02-01 学生一覧</span><span class="st ok">承認</span></div><div class="ui"><div class="sd"></div><div class="bd"><i class="h"></i><i class="f"></i><i></i><i></i><i></i></div></div><div class="ft"><span class="tk">#101 学生一覧</span><span class="src-tag">lms.pen v3</span></div></div>
+          <span class="lbl" style="left:222px;top:150px">行クリック</span>
+          <div class="scr sel" style="left:290px;top:80px"><div class="nm"><span>W04-02 学生詳細</span><span class="st bad">要修正</span></div><div class="ui"><div class="sd"></div><div class="bd"><i class="h"></i><i></i><i class="r"></i><i></i><i class="btn"></i></div></div><div class="ft"><span class="tk">#102 詳細</span><span class="tk">#118 API</span><span class="src-tag">lms.pen v3</span></div></div>
+          <div class="dia" style="left:500px;top:122px"><span>承認<br>権限あり？</span></div>
+          <span class="lbl" style="left:600px;top:150px">あり</span>
+          <span class="lbl" style="left:556px;top:262px">なし</span>
+          <div class="scr" style="left:640px;top:80px"><div class="nm"><span>W05-01 承認</span><span class="st warn">レビュー待ち</span></div><div class="ui"><div class="sd"></div><div class="bd"><i class="h"></i><i class="f"></i><i></i><i class="btn"></i></div></div><div class="ft"><span class="tk">#103 承認</span><span class="src-tag">lms.pen v4</span></div></div>
+          <div class="endn" style="left:470px;top:332px">閲覧のみ（ボタン非表示）</div>
+          <div class="scr ghost" style="left:640px;top:342px"><div class="nm"><span>W05-02 承認完了</span><span class="st mute">下書き</span></div><div class="ui" style="opacity:.45"><div class="sd"></div><div class="bd"><i class="h"></i><i></i></div></div><div class="ft"><span class="tk">#131 完了通知</span></div></div>
+          <div class="sticky" style="left:30px;top:310px">一覧は 50 件ページング。検索は学籍番号・氏名の部分一致。<span class="by">ノミン</span></div>
+          <div class="sticky pink" style="left:262px;top:330px">「編集」ボタンの遷移先 W04-03 がまだ無い。<span class="by">山田（レビュー）</span></div>
+          <div class="zoom">− 85% +</div>
+        </div></div>
+        <aside class="insp">
+          <div class="sec"><h5><span data-i="UI 画面|UI screen">UI 画面</span><span class="sub">1 / 4</span></h5>
+            <div style="font-weight:500">W04-02 学生詳細</div>
+          </div>
+          <div class="sec"><h5 data-i="审核状态（画框的，与 D2 同一份）|Review status (the frame's, same as D2)">レビュー状態（フレームのもの、D2 と共通）</h5>
+            <div class="sel-st"><span data-i="草稿|Draft">下書き</span><span data-i="待审核|In review">レビュー待ち</span><span class="on" data-i="要修改|Changes">要修正</span><span data-i="已通过|Approved">承認</span></div>
+            <div class="sub" data-i="10/20 山田 改为「要修改」· 未解决评论 2|Set to “Changes” by Yamada 10/20 · 2 open comments">10/20 山田が「要修正」に変更 · 未解決コメント 2</div>
+          </div>
+          <div class="sec"><h5><span data-i="关联任务|Linked tasks">紐付けタスク</span><button class="btn sm" type="button">＋</button></h5>
+            <div class="tkrow"><span>#102 学生詳細画面</span><span class="who">開発中 · 佐藤</span></div>
+            <div class="tkrow"><span>#118 学生詳細 API</span><span class="who">未着手 · 李</span></div>
+          </div>
+          <div class="sec"><h5 data-i="引用的画框|Referenced frame">参照フレーム</h5>
+            <dl class="kv"><dt data-i="画面设计|Design">デザイン</dt><dd class="mono">lms.pen</dd><dt data-i="画框|Frame">フレーム</dt><dd>W04-02 学生詳細</dd><dt data-i="显示版本|Shown">表示中の版</dt><dd>v3 · 10/18</dd><dt data-i="图片|Image">画像</dt><dd class="sub">1440×900 · 212 KB</dd></dl>
+            <div class="warnbox" data-i="lms.pen 已有 v4（10/20），这里还显示 v3 的图。审核过的图不会被悄悄替换。|lms.pen has v4 (10/20); this board still shows v3. Reviewed images are never swapped silently.">lms.pen は v4（10/20）がある。このボードは v3 の画像のまま。レビュー済みの画像が勝手に差し替わることはない。</div>
+            <div class="row"><button class="btn sm" type="button" data-i="更新为 v4|Update to v4">v4 に更新</button><button class="btn sm" type="button" data-i="在画面设计中打开 →|Open in screen design →">画面デザインで開く →</button></div>
+          </div>
+        </aside>
+      </div>
+    </div>
+  </section>
+
+  <!-- D4 -->
+  <section class="screen" id="d4">
+    <div class="cap">
+      <span class="id">D4</span><h2 data-i="审核模式 · 定位评论|Review mode · Pinned comments">レビュー · ピン留めコメント</h2>
+      <p data-i="审核人员不用装 Pencil、不用 git pull：打开链接就进审核模式。画布只读，点画面上任意位置落一个评论钉；右侧按画面分组，每张画面单独「通过 / 要修改」。评论记在当前版本上，画面更新为新版本后旧钉保留并标「旧版」。|Reviewers need neither Pencil nor git pull: open the link and land in review mode. The canvas is read-only; click anywhere on a screen to drop a pin. The sidebar groups threads by screen with per-screen Approve / Request changes. Comments are tied to the revision; after the screen is updated old pins stay, marked “older version”.">レビュー担当は Pencil も git pull も不要：リンクを開けばレビューモード。キャンバスは閲覧のみ、画面上の任意の位置をクリックしてピンを立てる。右側は画面ごとにまとまり、画面単位で「承認 / 要修正」。コメントは版に紐づき、画面を新しい版に更新した後も旧ピンは「旧版」として残る。</p>
+      <div class="notes"><span class="impl done" data-i="版本级评论 · 解决状态|Revision comments · resolve">版単位のコメント・解決</span><span class="impl new" data-i="画面内坐标钉（表里已预留 element_id/anchor_x/anchor_y）|Pins at screen coords (element_id/anchor_x/anchor_y columns already reserved)">画面内座標のピン（element_id / anchor_x / anchor_y 列は予約済み）</span><span class="impl new" data-i="按画面审批 → 通知负责人|Per-screen approval → notify assignee">画面単位の承認 → 担当者へ通知</span></div>
+    </div>
+    <div class="win">
+      <div class="bar"><div class="dots"><i></i><i></i><i></i></div><div class="url">pm.example.com/projects/lms-2026/gantt?tab=design&amp;open=学生管理フロー&amp;mode=review</div></div>
+      <div class="wsbar">
+        <div class="t"><button class="btn sm" type="button">←</button><span>学生管理フロー</span><span class="sub">r12</span></div>
+        <div class="row">
+          <div class="seg"><span data-i="编辑|Edit">編集</span><span class="on" data-i="审核|Review">レビュー</span></div>
+          <span class="sub" data-i="点击画面即可添加评论|Click a screen to comment">画面をクリックしてコメント</span>
+        </div>
+      </div>
+      <div class="ws">
+        <div class="cvwrap"><div class="cv">
+          <svg class="lines" viewBox="0 0 850 540" aria-hidden="true">
+            <g fill="none" stroke="#3185ff" stroke-width="2" stroke-linecap="round">
+              <path d="M212 170 H288" marker-end="url(#ah)"/><path d="M472 170 H500" marker-end="url(#ah)"/><path d="M596 170 H636" marker-end="url(#ah)"/><path d="M548 218 V328" marker-end="url(#ah)"/><path d="M730 270 V338" marker-end="url(#ah)"/>
+            </g>
+          </svg>
+          <div class="scr" style="left:30px;top:80px"><div class="nm"><span>W02-01 学生一覧</span><span class="st ok">承認</span></div><div class="ui"><div class="sd"></div><div class="bd"><i class="h"></i><i class="f"></i><i></i><i></i><i></i></div></div><div class="ft"><span class="tk">#101 学生一覧</span></div></div>
+          <div class="scr sel" style="left:290px;top:80px"><div class="nm"><span>W04-02 学生詳細</span><span class="st bad">要修正</span></div><div class="ui"><div class="sd"></div><div class="bd"><i class="h"></i><i></i><i class="r"></i><i></i><i class="btn"></i></div></div><div class="ft"><span class="tk">#102 詳細</span><span class="tk">#118 API</span></div></div>
+          <div class="pin" style="left:360px;top:132px"><b>1</b></div>
+          <div class="pin" style="left:430px;top:168px"><b>2</b></div>
+          <div class="pin done" style="left:130px;top:118px"><b>3</b></div>
+          <div class="dia" style="left:500px;top:122px"><span>承認<br>権限あり？</span></div>
+          <div class="scr" style="left:640px;top:80px"><div class="nm"><span>W05-01 承認</span><span class="st warn">レビュー待ち</span></div><div class="ui"><div class="sd"></div><div class="bd"><i class="h"></i><i class="f"></i><i></i><i class="btn"></i></div></div><div class="ft"><span class="tk">#103 承認</span></div></div>
+          <div class="endn" style="left:470px;top:332px">閲覧のみ（ボタン非表示）</div>
+          <div class="scr ghost" style="left:640px;top:342px"><div class="nm"><span>W05-02 承認完了</span><span class="st mute">下書き</span></div><div class="ui" style="opacity:.45"><div class="sd"></div><div class="bd"><i class="h"></i><i></i></div></div></div>
+          <div class="sticky" style="left:30px;top:310px">一覧は 50 件ページング。検索は学籍番号・氏名の部分一致。<span class="by">ノミン</span></div>
+          <div class="zoom">− 85% +</div>
+        </div></div>
+        <aside class="insp">
+          <div class="sec"><h5><span>W04-02 学生詳細</span><span class="st bad">要修正</span></h5>
+            <div class="cmt"><div class="h"><span class="n">1</span>山田 · r12 · 10/20 14:02</div><div>生年月日は和暦も併記してください（例：平成 24 年）。</div>
+              <div class="rep">ノミン：r13 で対応します</div></div>
+            <div class="cmt"><div class="h"><span class="n">2</span>山田 · r12 · 10/20 14:05</div><div>赤枠のエラー表示、文言が仕様書（§3.2）と違います。</div></div>
+            <div class="field"><div class="input"><span class="sub" data-i="钉 3 处的评论…|Comment at pin…">ピンの位置にコメント…</span></div></div>
+            <div class="decide"><button class="btn bad" type="button" data-i="要修改|Request changes">要修正</button><button class="btn ok" type="button" data-i="通过|Approve">承認</button></div>
+            <div class="sub" data-i="判定后通知 #102 / #118 的负责人；任务状态不会被自动改。|Assignees of #102 / #118 are notified; task status is not changed automatically.">判定すると #102 / #118 の担当者に通知。タスクの状態は自動では変えない。</div>
+          </div>
+          <div class="sec"><h5><span>W02-01 学生一覧</span><span class="st ok">承認</span></h5>
+            <div class="cmt"><div class="h"><span class="n done">3</span>山田 · r10 · <span data-i="已解决|Resolved">解決済み</span></div><div style="color:var(--muted)">検索ボックスを上部に移動。</div></div>
+          </div>
+          <div class="sec"><h5><span>W05-01 承認</span><span class="st warn">レビュー待ち</span></h5><div class="sub" data-i="暂无评论|No comments yet">コメントなし</div></div>
+        </aside>
+      </div>
+    </div>
+  </section>
+
+  <!-- D5 -->
+  <section class="screen" id="d5">
+    <div class="cap">
+      <span class="id">D5</span><h2 data-i="往流程板添加画面|Add screens to a flow board">フローボードに画面を追加</h2>
+      <p data-i="从本项目的画面设计（.pen）里选画框放到流程板上，图片由浏览器里的 OpenPencil 渲染导出，不需要服务端导出工具；按画面编号自动匹配同名任务。没有 .pen 的画面也可以直接拖 PNG。|Pick frames from this project's screen designs (.pen) and place them on the flow board; images are rendered by OpenPencil in the browser, no server-side export needed. Frames are auto-matched to tasks by screen ID. Screens without a .pen can still be dropped in as PNGs.">このプロジェクトの画面デザイン（.pen）からフレームを選んでフローボードに置く。画像はブラウザ内の OpenPencil で描画して書き出すので、サーバー側の書き出しツールは要らない。画面番号で同名タスクを自動マッチ。.pen が無い画面は PNG を直接ドロップしてもよい。</p>
+      <div class="notes"><span class="impl done" data-i="拖入 PNG|Drop PNG">PNG ドロップ</span><span class="impl chk" data-i="OpenPencil 在浏览器里把画框导出为 PNG|OpenPencil exports frames to PNG in the browser">OpenPencil でフレームを PNG に書き出し（ブラウザ内）</span><span class="impl new" data-i="按编号匹配任务|Match tasks by screen ID">画面番号でタスクをマッチ</span></div>
+    </div>
+    <div class="win">
+      <div class="modal-bg">
+        <div class="modal wide">
+          <div class="mh"><span data-i="添加画面|Add screens">画面を追加</span><span class="sub">×</span></div>
+          <div class="mb">
+            <div class="tabs"><span class="on" data-i="本项目的画面设计|This project's screen designs">プロジェクトの画面デザイン</span><span data-i="图片|Image">画像</span></div>
+            <div class="row"><div class="input" style="flex:1"><span class="mono">lms.pen · v4 · 10/20 ノミン</span><span class="sub">▾</span></div><span class="sub" data-i="由 OpenPencil 渲染|Rendered by OpenPencil">OpenPencil で描画</span></div>
+            <div class="frames">
+              <div class="frm on"><span class="ck"></span><div class="ui"><div class="sd"></div><div class="bd"><i class="h"></i><i class="f"></i><i></i></div></div><b>W02-01 学生一覧</b><span class="tk">→ #101</span></div>
+              <div class="frm on"><span class="ck"></span><div class="ui"><div class="sd"></div><div class="bd"><i class="h"></i><i></i><i class="btn"></i></div></div><b>W04-02 学生詳細</b><span class="tk">→ #102</span></div>
+              <div class="frm on"><span class="ck"></span><div class="ui"><div class="sd"></div><div class="bd"><i class="h"></i><i class="f"></i></div></div><b>W04-03 学生編集</b><span class="chip c-warn" data-i="无同名任务|No matching task">該当タスクなし</span></div>
+              <div class="frm"><span class="ck"></span><div class="ui"><div class="sd"></div><div class="bd"><i class="h"></i><i></i></div></div><b>W05-01 承認</b><span class="sub" data-i="已在板上|Already on board">ボードに配置済み</span></div>
+            </div>
+            <div class="field"><label data-i="放置方式|Placement">配置</label><div class="row"><span class="chip c-pri" data-i="横向排列在选中画面右侧|Row to the right of selection">選択中の画面の右に横並び</span><span class="chip c-mute" data-i="网格|Grid">グリッド</span></div></div>
+            <div class="callout" data-i="已在板上的画框再导入时，作为该画面的新版本（旧图保留，可在 D6 对比），不会新建重复画面。|Frames already on the board come in as a new version of that screen (old image kept, compare in D6) rather than a duplicate.">ボードに既にあるフレームは、その画面の新しい版として取り込む（旧画像は残り D6 で比較できる）。重複した画面は作らない。</div>
+          </div>
+          <div class="mf"><button class="btn" type="button" data-i="取消|Cancel">キャンセル</button><button class="btn pri" type="button" data-i="添加 3 个画面|Add 3 screens">3 画面を追加</button></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- D6 -->
+  <section class="screen" id="d6">
+    <div class="cap">
+      <span class="id">D6</span><h2 data-i="画面版本对比|Compare screen versions">画面の版比較</h2>
+      <p data-i="按「画面」对比而不是按整张板：同一个画面的两次导出左右并排，差异区域高亮；上一版的未解决评论跟过来，审核人可以逐条确认后点「通过」。|Compare per screen, not per board: two exports of the same screen side by side with changed areas highlighted. Open comments from the previous version carry over so the reviewer can check each before approving.">ボード全体ではなく「画面」単位で比較：同じ画面の 2 回の書き出しを左右に並べ、変更箇所をハイライト。前の版の未解決コメントも引き継ぎ、レビュー担当は一つずつ確認してから「承認」。</p>
+      <div class="notes"><span class="impl done" data-i="整板历史版本只读查看|Read-only past board revisions">ボード全体の過去版を閲覧</span><span class="impl new" data-i="画面级对比 · 差异高亮（像素 diff）|Per-screen compare · pixel-diff highlight">画面単位の比較・差分ハイライト（ピクセル diff）</span></div>
+    </div>
+    <div class="win">
+      <div class="wsbar"><div class="t"><span>W04-02 学生詳細</span><span class="sub">lms.pen v3 → v4</span></div><div class="row"><div class="seg"><span class="on" data-i="并排|Side by side">並べる</span><span data-i="滑动|Swipe">スワイプ</span><span data-i="叠加|Overlay">重ねる</span></div></div></div>
+      <div class="main">
+        <div class="cmp">
+          <div class="side-v"><div class="sub">lms.pen v3 · 10/18</div><div class="ui"><div class="sd"></div><div class="bd"><i class="h"></i><i></i><i class="r hl"></i><i></i><i class="f"></i><i class="btn"></i></div></div></div>
+          <div class="side-v"><div class="sub">lms.pen v4 · 10/20 <span class="chip c-pri" data-i="新|New">新</span></div><div class="ui"><div class="sd"></div><div class="bd"><i class="h"></i><i></i><i class="hl add"></i><i></i><i class="f hl add"></i><i class="btn"></i></div></div></div>
+        </div>
+        <div class="card"><div class="hd"><h4 data-i="上一版的评论|Comments from previous version">前の版のコメント</h4><span class="sub">2</span></div>
+          <div class="bd"><ul class="changes" style="margin:0;padding:0;list-style:none">
+            <li><span class="chip c-ok" data-i="已对应|Addressed">対応済み</span>① 生年月日は和暦も併記</li>
+            <li><span class="chip c-warn" data-i="待确认|Check">要確認</span>② エラー表示の文言（§3.2）</li>
+          </ul></div></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- D7 -->
+  <section class="screen" id="d7">
+    <div class="cap">
+      <span class="id">D7</span><h2 data-i="任务详情 · 设计标签|Task detail · Design tab">タスク詳細 · デザイン</h2>
+      <p data-i="开发者从任务出发：看到这个任务对应的所有画面、各自审核状态和未解决评论数，点「在板上打开」直接跳到板上并聚焦该画面。|Developers start from the task: every screen linked to it, each with its review status and open-comment count. “Open on board” jumps to the board and focuses that screen.">開発者はタスクから入る：このタスクに紐づく画面すべてと、それぞれのレビュー状態・未解決コメント数。「ボードで開く」でボードに飛び、その画面にフォーカスする。</p>
+      <div class="notes"><span class="impl done" data-i="「设计」标签（整板关联）|Design tab (whole-board link)">「デザイン」タブ（ボード単位の紐付け）</span><span class="impl new" data-i="改为画面级 · 聚焦跳转|Per-screen · focus jump">画面単位に変更・フォーカス遷移</span></div>
+    </div>
+    <div class="win">
+      <div class="modal-bg">
+        <div class="modal wide">
+          <div class="mh"><span>#102 学生詳細画面</span><span class="sub">×</span></div>
+          <div class="mb">
+            <div class="tabs"><span data-i="基本|Details">基本</span><span data-i="评论|Comments">コメント</span><span class="on" data-i="设计 2|Design 2">デザイン 2</span><span data-i="履历|Activity">履歴</span></div>
+            <div class="thumbs">
+              <div class="thumb"><div class="pv" style="height:auto;padding:8px"><div class="ui"><div class="sd"></div><div class="bd"><i class="h"></i><i></i><i class="r"></i><i></i><i class="btn"></i></div></div></div>
+                <div class="meta"><b>W04-02 学生詳細</b><div class="row"><span class="st bad">要修正</span><span class="sub" data-i="未解决 1|1 open">未解決 1</span></div><span class="sub">学生管理フロー · r13</span><button class="btn sm" type="button" data-i="在板上打开 →|Open on board →">ボードで開く →</button></div></div>
+              <div class="thumb"><div class="pv" style="height:auto;padding:8px"><div class="ui"><div class="sd"></div><div class="bd"><i class="h"></i><i class="f"></i></div></div></div>
+                <div class="meta"><b>W04-03 学生編集</b><div class="row"><span class="st mute">下書き</span></div><span class="sub">学生管理フロー · r13</span><button class="btn sm" type="button" data-i="在板上打开 →|Open on board →">ボードで開く →</button></div></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- D8 -->
+  <section class="screen" id="d8">
+    <div class="cap">
+      <span class="id">D8</span><h2 data-i="从 Claude Code 画|Draw from Claude Code">Claude Code から描く</h2>
+      <p data-i="同事在 Claude Code / Codex 里一句话，AI 通过 pm-mcp 读任务、把画面放上板、按跳转顺序连箭头、贴说明便签，保存为新版本。现有 pm_save_design 需要模型自己拼 Excalidraw 元素 JSON；新增几个高层工具（放画面、连线、贴便签），由服务端负责布局和箭头绑定，模型不用算坐标。|A teammate asks Claude Code / Codex in one sentence; through pm-mcp the AI reads the task, places screens, connects them in navigation order, adds notes, and saves a new revision. Today pm_save_design makes the model hand-assemble Excalidraw element JSON; new high-level tools (place screen, connect, add note) let the server handle layout and arrow binding.">同僚が Claude Code / Codex で一言頼むと、AI が pm-mcp でタスクを読み、画面をボードに置き、遷移順に矢印でつなぎ、説明の付箋を貼って新しい版として保存する。現状の pm_save_design はモデルが Excalidraw 要素 JSON を自前で組む必要がある。高レベルのツール（画面を置く・つなぐ・付箋）を足し、配置と矢印の吸着はサーバー側でやる。</p>
+      <div class="notes"><span class="impl done">pm_list_designs · pm_get_design · pm_save_design · pm_*_design_comment(s)</span><span class="impl new">pm_board_add_screens · pm_board_connect · pm_board_add_note · pm_set_screen_status</span></div>
+    </div>
+    <div class="win">
+      <div class="bar"><div class="dots"><i></i><i></i><i></i></div><div class="url">~/work/lms — claude</div></div>
+<div class="term"><span class="p">&gt;</span> 課程管理の要件どおり、W02-01・W04-02・W05-01 を「課程管理フロー」ボードに遷移順で並べて青い矢印でつないで、
+  黄色の付箋で説明を足して。ボード全体を #128 に紐付けて。
+
+<span class="c">● pm-mcp · pm_get_task</span>          #128 課程管理画面 <span class="c">(要件 3 項目 · 紐付けボード 1)</span>
+<span class="c">● pm-mcp · pm_get_design</span>        課程管理フロー  <span class="y">r5</span>  <span class="c">画面 2 · 矢印 1 · 付箋 0</span>
+<span class="c">● pm-mcp · pm_board_add_screens</span>  design <span class="y">lms.pen v4</span>  frames W02-01, W04-02, W05-01
+                                 <span class="c">→ W02-01 既存のため新しい版として更新 · 2 画面を右に追加</span>
+<span class="c">● pm-mcp · pm_board_connect</span>      W02-01 → W04-02 「行クリック」 · W04-02 → W05-01 「申請」
+<span class="c">● pm-mcp · pm_board_add_note</span>     W04-02 の下：「定員超過時は申請ボタンを無効化（要件 2）」
+<span class="c">● pm-mcp · pm_save_design</span>        expectedRevision <span class="y">5</span> → <span class="g">r6 を保存</span>  task #128
+
+<span class="g">✓</span> 課程管理フローを r6 に更新しました（画面 4 · 矢印 3 · 付箋 1）。
+  PM で開く <span class="u">https://pm.example.com/projects/lms-2026/gantt?tab=design&amp;open=…&amp;rev=6</span>
+  <span class="c">AI が置いた要素には「AI」マークが付き、レビュー担当がそのまま D4 で確認できます。</span></div>
+    </div>
+  </section>
+
+  <p class="foot" data-i="需求：work/design-studio/requirements.md · 现状实装报告：work/design-studio/README.md · 本文件只表达目标画面，数据结构与 API 待写入 doc/design/pm-design-board.md|Requirements: work/design-studio/requirements.md · Current build report: work/design-studio/README.md · This file shows target screens only; data model & API go in doc/design/pm-design-board.md">要件：work/design-studio/requirements.md · 現状の実装報告：work/design-studio/README.md · 本ファイルは目標画面のみ。データ構造と API は doc/design/pm-design-board.md に書く予定</p>
+</div>
+
+<script>
+(function(){
+  var els=[].slice.call(document.querySelectorAll('[data-i]'));
+  els.forEach(function(el){el.dataset.ja=el.textContent;});
+  function apply(l){
+    els.forEach(function(el){
+      var p=el.dataset.i.split('|');
+      el.textContent = l==='ja' ? el.dataset.ja : (l==='zh' ? p[0] : p[1]);
+    });
+    document.documentElement.lang = l==='zh'?'zh-CN':(l==='en'?'en':'ja');
+    [].forEach.call(document.querySelectorAll('.lang button'),function(b){b.setAttribute('aria-pressed',String(b.dataset.l===l));});
+    try{localStorage.setItem('pm-mock-lang',l);}catch(e){}
+  }
+  [].forEach.call(document.querySelectorAll('.lang button'),function(b){b.addEventListener('click',function(){apply(b.dataset.l);});});
+  var saved=null; try{saved=localStorage.getItem('pm-mock-lang');}catch(e){}
+  if(saved==='zh'||saved==='en') apply(saved);
+})();
+</script>

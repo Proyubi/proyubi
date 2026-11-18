@@ -1,0 +1,262 @@
+/* 任务编辑抽屉：左右结构（左=表单，右=评论）。撑满 drawer body 高度，各列内部滚动 */
+.pm-task-modal-body {
+  display: flex;
+  flex: 1;
+  min-height: 0;
+}
+
+/* 左栏：表单（滚动）+ 底部操作按钮（钉住） */
+.pm-task-modal-left {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.pm-task-modal-form {
+  flex: 1;
+  min-width: 0;
+  overflow-y: auto;
+  padding: 0 20px 4px 8px;
+}
+
+.pm-task-modal-footer {
+  flex: none;
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  padding: 12px 20px 0 8px;
+  border-top: 1px solid #f0f0f0;
+}
+
+.pm-task-modal-comments {
+  width: 420px;
+  flex: none;
+  border-left: 1px solid #f0f0f0;
+  padding-left: 24px;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
+/* 右栏页签（コメント / 設計）：让选中页内容撑满整列高度，内部组件才能 height:100% */
+.pm-task-modal-tabs {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.pm-task-modal-tabs .ant-tabs-content-holder {
+  flex: 1;
+  min-height: 0;
+}
+
+.pm-task-modal-tabs .ant-tabs-content,
+.pm-task-modal-tabs .ant-tabs-tabpane {
+  height: 100%;
+}
+
+/* 任务评论区（弹窗右栏，撑满高度） */
+.pm-comments {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
+}
+
+.pm-comments-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 600;
+  font-size: 14px;
+  margin-bottom: 12px;
+  flex: none;
+}
+
+.pm-comments-count {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 20px;
+  height: 18px;
+  padding: 0 6px;
+  border-radius: 9px;
+  background: #f0f0f0;
+  color: #595959;
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.pm-comments-empty {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #9ca3af;
+  font-size: 13px;
+}
+
+/* 评论列表：占满中段并独立滚动 */
+.pm-comments-list {
+  list-style: none;
+  margin: 0 -8px 12px 0;
+  padding: 0 8px 0 0;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  flex: 1;
+  overflow-y: auto;
+}
+
+/* 评论项：飞书风格 feed —— 头像在左，正文列在右 */
+.pm-comment {
+  display: flex;
+  gap: 10px;
+}
+
+.pm-comment-avatar {
+  flex: none;
+  font-size: 12px;
+}
+
+.pm-comment-body {
+  flex: 1;
+  min-width: 0; /* critical: lets the author ellipsis engage */
+}
+
+/* 第一行：作者 + 时间 + 操作，单行不换行 */
+.pm-comment-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: nowrap;
+  min-width: 0;
+  min-height: 24px; /* reserves the ghost-button row so body text doesn't jump on hover */
+}
+
+/* 昵称/邮箱：唯一可收缩的元素，溢出省略号 */
+.pm-comment-author {
+  flex: 0 1 auto;
+  min-width: 0;
+  font-weight: 600;
+  font-size: 13px;
+  line-height: 20px;
+  color: #1f2937;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.pm-comment-time {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: #9ca3af;
+  font-size: 12px;
+  line-height: 20px;
+  white-space: nowrap;
+}
+
+/* "編集済み"标记：时间后细微内联标记，前置圆点分隔，永不换行 */
+.pm-comment-edited {
+  color: #9ca3af;
+  font-size: 12px;
+  white-space: nowrap;
+}
+.pm-comment-edited::before {
+  content: "·";
+  margin-right: 6px;
+  color: #d1d5db;
+}
+
+/* 操作按钮：钉在行尾，hover/focus 时淡入 */
+.pm-comment-ops {
+  flex: none;
+  margin-left: auto; /* shoves ops to the right edge regardless of author width */
+  display: inline-flex;
+  gap: 2px;
+  opacity: 0;
+  transition: opacity 0.15s ease;
+}
+.pm-comment:hover .pm-comment-ops,
+.pm-comment:focus-within .pm-comment-ops {
+  opacity: 1;
+}
+.pm-comment-ops .ant-btn {
+  width: 24px;
+  height: 24px;
+  padding: 0;
+  color: #9ca3af;
+}
+.pm-comment-ops .ant-btn:hover {
+  color: #4b5563;
+}
+
+/* 正文：作者行下方独立成行 */
+.pm-comment-text {
+  margin-top: 3px;
+  font-size: 13px;
+  line-height: 1.6;
+  color: #374151;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.pm-comment-edit {
+  margin-top: 6px;
+}
+
+.pm-comment-edit-ops {
+  margin-top: 6px;
+  display: flex;
+  gap: 8px;
+}
+
+/* 输入区：固定在底部 */
+.pm-comments-composer {
+  flex: none;
+  padding-top: 12px;
+  border-top: 1px solid #f0f0f0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.pm-comments-composer .pm-comments-composer-actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.pm-comments-composer-actions .ant-btn-icon-only {
+  color: #9ca3af;
+}
+.pm-comments-composer-actions .ant-btn-icon-only:hover {
+  color: #4b5563;
+}
+
+/* 表情选择面板 */
+.pm-emoji-grid {
+  display: grid;
+  grid-template-columns: repeat(8, 1fr);
+  gap: 2px;
+  width: 280px;
+}
+
+.pm-emoji-item {
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  font-size: 18px;
+  line-height: 1;
+  padding: 5px 0;
+  border-radius: 6px;
+  transition: background 0.12s;
+}
+.pm-emoji-item:hover {
+  background: #f3f4f6;
+}

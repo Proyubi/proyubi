@@ -1,0 +1,76 @@
+spring:
+  datasource:
+    # 生产库连接必须通过环境变量注入
+    url: ${SPRING_DATASOURCE_URL}
+    driver-class-name: org.postgresql.Driver
+    username: ${SPRING_DATASOURCE_USERNAME}
+    password: ${SPRING_DATASOURCE_PASSWORD}
+    hikari:
+      # 禁用 PostgreSQL 服务器端 prepared statement，避免 "prepared statement already exists" 错误
+      # prepareThreshold=0 参数会通过 DataSourceConfig BeanPostProcessor 自动添加到连接 URL 中
+      connection-init-sql: "SET SESSION statement_timeout = 0"
+      # 连接池配置（生产环境）
+      maximum-pool-size: 20  # 最大连接数（根据实际负载调整）
+      minimum-idle: 10  # 最小空闲连接数
+      connection-timeout: 30000  # 连接超时时间（30秒）
+      max-lifetime: 1800000  # 连接最大生命周期（30分钟，PostgreSQL 推荐值）
+      idle-timeout: 600000  # 空闲连接超时时间（10分钟）
+      leak-detection-threshold: 0  # 连接泄漏检测阈值（生产环境可关闭或设置为较大值，0表示禁用）
+      # 连接池名称（用于日志识别）
+      pool-name: ProyubiHikariPool
+
+  # SQL 初始化配置（已禁用自动创建表，避免影响启动性能）
+  # 生产环境请使用数据库迁移工具（如 Flyway、Liquibase）管理表结构
+  sql:
+    init:
+      mode: never  # never: 不执行自动初始化，避免影响启动性能
+      # schema-locations: classpath:db/schema/schema.sql
+      # continue-on-error: true
+      # separator: ;
+
+  data:
+    redis:
+      host: 127.0.0.1
+      port: 6379
+
+mybatis-flex:
+  mapper-locations: classpath*:/mapper/**/*.xml
+  # 类型别名按「简单类名」注册，不能整树扫描 ai.proyubi（同名实体/TableDef 会冲突）
+  type-aliases-package: ai.proyubi.platform,ai.proyubi.account,ai.proyubi.pm
+  # 自定义 TypeHandler 包扫描（SmartLocalDateTimeTypeHandler 解决 timestamptz → LocalDateTime 时区转换）
+  type-handlers-package: ai.proyubi.common.mybatisflex.typehandler
+  # 注意：禁用 banner 需要通过代码配置，见 MybatisFlexConfig.java
+  configuration:
+    # 将 SQL 结果列的 snake_case（如 display_name）自动映射到 Java Bean 的 camelCase 属性（如 displayName）
+    map-underscore-to-camel-case: true
+
+# Supabase Storage（可选；默认存储走 MinIO/S3，见 platform_oss_config）
+supabase:
+  url: ${SUPABASE_URL:}
+  service-role-key: ${SUPABASE_SERVICE_ROLE_KEY:}
+  storage:
+    bucket: ${SUPABASE_STORAGE_BUCKET:pullcord}
+
+# 平台超级管理员账号
+proyubi:
+  ops:
+    admin:
+      username: ${OPS_ADMIN_USERNAME}
+      password: ${OPS_ADMIN_PASSWORD}
+
+# 日志配置（生产环境使用 INFO 级别，减少日志量）
+logging:
+  level:
+    # MyBatis-Flex Mapper 接口日志（生产环境可以设置为 INFO 或 WARN）
+    ai.proyubi.platform.mapper: INFO
+    ai.proyubi.account.mapper: INFO
+    ai.proyubi.common.mybatisflex.mapper: INFO
+    ai.proyubi.settings.mapper: INFO
+    # MyBatis 核心日志（设置为 INFO，避免打印启动时的初始化日志）
+    org.apache.ibatis: INFO
+    # MyBatis-Flex 日志（设置为 INFO，避免打印启动时的初始化日志）
+    com.mybatisflex: INFO
+    # JDBC 日志（设置为 INFO，避免打印连接、语句等详细信息）
+    java.sql: INFO
+    # 根日志级别
+    root: INFO

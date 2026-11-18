@@ -1,0 +1,16 @@
+node_modules
+dist
+.umi
+.umi-production
+.git
+.gitignore
+Dockerfile
+.dockerignore
+docker-compose.yml
+deploy.sh
+README.md
+.DS_Store
+*.log
+tsconfig.tsbuildinfo
+tests
+.husky

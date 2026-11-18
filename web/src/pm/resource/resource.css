@@ -1,0 +1,393 @@
+/* ===== 成员视图 / 资源视图（リソース） ===== */
+.rv-wrap {
+  --rv-label-w: 300px;
+  --rv-row-h: 34px;
+  --rv-bar-h: 18px;
+  --rv-border: #e6e9f0;
+  --rv-grid: #f1f3f8;
+  --rv-conflict: #f5222d;
+  --rv-group-bg: #fafbfd;
+
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+  background: #fff;
+  border: 1px solid var(--rv-border);
+  border-radius: 10px;
+  overflow: hidden;
+}
+
+/* 顶部控件条 */
+.rv-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--rv-border);
+  background: #fafbfd;
+}
+.rv-toolbar-spacer {
+  flex: 1;
+}
+
+.rv-scroll {
+  flex: 1;
+  overflow: auto;
+  scrollbar-width: thin;
+}
+
+/* 横向拖拽平移：抓手光标 + 拖动时禁止选中文本 */
+.rv-grab {
+  cursor: grab;
+}
+.rv-grabbing {
+  cursor: grabbing;
+  user-select: none;
+}
+
+.rv-grid {
+  /* 内层宽度 = 标签列 + 内容宽 */
+  min-width: 100%;
+  position: relative;
+}
+
+/* 今日竖线：盖在甘特条之上；表头(z5)与左侧标签列(z2)会遮挡两端 */
+.rv-today {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 2px;
+  margin-left: -1px;
+  background: #fa541c;
+  z-index: 1;
+  pointer-events: none;
+}
+
+/* 表头行：标签占位 + 三层时间轴 */
+.rv-head-row {
+  display: flex;
+  position: sticky;
+  top: 0;
+  z-index: 5;
+  background: #fafbfd;
+  border-bottom: 1px solid var(--rv-border);
+}
+.rv-head-corner {
+  flex: 0 0 var(--rv-label-w);
+  width: var(--rv-label-w);
+  border-right: 1px solid var(--rv-border);
+  position: sticky;
+  left: 0;
+  z-index: 6;
+  background: #fafbfd;
+}
+
+/* 复用 roadmap 的时间轴样式类（rm-tl-*）；不重复定义 */
+
+/* 分组标题行（客户 / 项目）：整条作背景带，文字单独 sticky 固定在左侧 */
+.rv-group {
+  display: flex;
+  align-items: center;
+  font-size: 12px;
+  font-weight: 600;
+  color: #4b5563;
+  background: var(--rv-group-bg);
+  border-bottom: 1px solid var(--rv-border);
+}
+/* 文字块跟随横向滚动固定在最左（与任务标签列一致） */
+.rv-group-text {
+  position: sticky;
+  left: 0;
+  z-index: 2;
+  padding: 4px 10px;
+  background: var(--rv-group-bg);
+  white-space: nowrap;
+}
+.rv-group-customer {
+  color: #1f2738;
+}
+.rv-group-project {
+  color: #6b7280;
+  font-weight: 500;
+}
+.rv-group-project .rv-group-text {
+  padding-left: 24px;
+}
+
+/* 任务行 */
+.rv-row {
+  display: flex;
+  border-bottom: 1px solid var(--rv-grid);
+  min-height: var(--rv-row-h);
+}
+.rv-row:hover {
+  background: #f7f9ff;
+}
+.rv-label {
+  flex: 0 0 var(--rv-label-w);
+  width: var(--rv-label-w);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 0 10px 0 24px;
+  font-size: 12px;
+  color: #1f2738;
+  background: #fff;
+  border-right: 1px solid var(--rv-border);
+  position: sticky;
+  left: 0;
+  z-index: 2;
+  overflow: hidden;
+}
+.rv-row:hover .rv-label {
+  background: #f7f9ff;
+}
+.rv-label-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+/* 可点击的任务名（打开编辑） */
+.rv-label-edit {
+  flex: 1;
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  border: none;
+  background: transparent;
+  font: inherit;
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.rv-label-edit:hover {
+  color: #1677ff;
+  text-decoration: underline;
+}
+.rv-label-muted {
+  color: #aab2c0;
+  font-size: 11px;
+}
+
+.rv-track {
+  position: relative;
+  flex: 1;
+  min-height: var(--rv-row-h);
+  background-image: linear-gradient(
+    to right,
+    var(--rv-grid) 1px,
+    transparent 1px
+  );
+}
+
+/* 甘特条 */
+.rv-bar {
+  position: absolute;
+  top: 50%;
+  height: var(--rv-bar-h);
+  transform: translateY(-50%);
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  padding: 0 6px;
+  font-size: 10px;
+  line-height: var(--rv-bar-h);
+  color: #fff;
+  white-space: nowrap;
+  overflow: hidden;
+  cursor: default;
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.18);
+}
+.rv-bar.is-clickable {
+  cursor: pointer;
+}
+.rv-bar-pct {
+  opacity: 0.85;
+}
+/* 进度填充叠加（深一点的同色覆盖左侧已完成部分） */
+.rv-bar-fill {
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.22);
+  border-radius: 4px 0 0 4px;
+  pointer-events: none;
+}
+.rv-bar-text {
+  position: relative;
+  z-index: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* 撞期高亮：红色斜纹（不加红边，避免突兀） */
+.rv-bar.is-conflict {
+  background-image: repeating-linear-gradient(
+    45deg,
+    rgba(245, 34, 45, 0.0),
+    rgba(245, 34, 45, 0.0) 5px,
+    rgba(245, 34, 45, 0.35) 5px,
+    rgba(245, 34, 45, 0.35) 10px
+  );
+}
+
+/* 甘特条悬浮提示（Popover 白卡片，结构化排版） */
+.rv-pop {
+  max-width: 320px;
+}
+.rv-tip-head {
+  line-height: 1.5;
+}
+.rv-tip-path {
+  font-size: 11px;
+  font-weight: 400;
+  color: #8c8c8c;
+  margin-bottom: 2px;
+}
+.rv-tip-name {
+  font-size: 13px;
+  font-weight: 600;
+  color: rgba(0, 0, 0, 0.88);
+}
+.rv-tip-meta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  min-width: 180px;
+  font-size: 12px;
+}
+.rv-tip-date {
+  color: #595959;
+}
+.rv-tip-pct {
+  flex: none;
+  font-weight: 600;
+  color: #fff;
+  background: #1677ff;
+  border-radius: 4px;
+  padding: 0 6px;
+}
+
+/* 里程碑点标记 */
+.rv-ms {
+  position: absolute;
+  top: 50%;
+  width: 12px;
+  height: 12px;
+  transform: translate(-50%, -50%) rotate(45deg);
+  background: #faad14;
+  border: 1px solid #fff;
+  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.12);
+}
+
+/* 全员模式：每个成员一行（泳道） */
+.rv-lane {
+  display: flex;
+  border-bottom: 1px solid var(--rv-border);
+  min-height: var(--rv-row-h);
+}
+.rv-lane:hover {
+  background: #f7f9ff;
+}
+.rv-lane-label {
+  flex: 0 0 var(--rv-label-w);
+  width: var(--rv-label-w);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0 10px;
+  font-size: 12px;
+  font-weight: 600;
+  color: #1f2738;
+  text-align: left;
+  background: #fafbfd;
+  border: none;
+  border-right: 1px solid var(--rv-border);
+  position: sticky;
+  left: 0;
+  z-index: 2;
+  cursor: pointer;
+  overflow: hidden;
+  font-family: inherit;
+}
+.rv-lane:hover .rv-lane-label {
+  background: #eef3ff;
+}
+.rv-lane-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  flex: 1;
+}
+
+/* 成员颜色圆点 */
+.rv-dot {
+  flex: 0 0 auto;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  display: inline-block;
+}
+
+/* 图例 */
+.rv-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+  align-items: center;
+  padding: 8px 12px;
+  border-top: 1px solid var(--rv-border);
+  background: #fafbfd;
+  font-size: 12px;
+  color: #4b5563;
+}
+.rv-legend-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.rv-legend-swatch {
+  width: 18px;
+  height: 12px;
+  border-radius: 3px;
+  outline: 2px solid var(--rv-conflict);
+  outline-offset: -1px;
+  background-image: repeating-linear-gradient(
+    45deg,
+    transparent,
+    transparent 4px,
+    rgba(245, 34, 45, 0.35) 4px,
+    rgba(245, 34, 45, 0.35) 8px
+  );
+}
+
+.rv-empty {
+  padding: 60px 0;
+}
+
+/* リスト表示：任务名按钮（点击编辑），外观与文本链接一致 */
+.rv-list-taskname {
+  border: none;
+  background: none;
+  padding: 0;
+  margin: 0;
+  cursor: pointer;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
+}
+.rv-list-taskname:hover {
+  color: #1677ff;
+  text-decoration: underline;
+}

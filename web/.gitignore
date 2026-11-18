@@ -1,0 +1,42 @@
+# ===== Dependencies =====
+node_modules/
+.pnpm-store/
+
+# ===== Build output =====
+/dist
+/coverage
+.umi
+.umi-production
+.umi-test
+/src/.umi
+/src/.umi-production
+/src/.umi-test
+/.env.local
+
+# ===== Umi / Max =====
+/.now
+/.vercel
+*.tsbuildinfo
+tsconfig.tsbuildinfo
+
+# ===== Env & local overrides =====
+.env.local
+.env.*.local
+
+# ===== IDE =====
+.idea/
+*.iml
+.vscode/**/*
+!.vscode/extensions.json
+
+# ===== Logs & temp =====
+*.log
+npm-debug.log*
+yarn-error.log
+.pnpm-debug.log*
+
+# ===== OS =====
+.DS_Store
+Thumbs.db
+/public/pen-viewer
+__pycache__/

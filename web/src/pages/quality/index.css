@@ -1,0 +1,857 @@
+/* 品質管理ページ */
+
+.qc-cases {
+  display: flex;
+  gap: 16px;
+  align-items: flex-start;
+}
+
+/* 左：スイート一覧 */
+.qc-suites {
+  flex: 0 0 240px;
+  width: 240px;
+  border: 1px solid rgba(5, 5, 5, 0.06);
+  border-radius: 8px;
+  padding: 8px;
+  background: #fff;
+}
+
+.qc-suites-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 4px 8px 8px;
+  font-weight: 600;
+}
+
+.qc-suite-item {
+  padding: 8px 10px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background 0.15s;
+  position: relative;
+}
+
+.qc-suite-item:hover {
+  background: rgba(0, 0, 0, 0.03);
+}
+
+.qc-suite-item.active {
+  background: rgba(22, 119, 255, 0.1);
+}
+
+.qc-suite-main,
+.qc-suite-item > span:first-child {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.qc-suite-count {
+  font-variant-numeric: tabular-nums;
+  color: rgba(0, 0, 0, 0.45);
+  font-size: 12px;
+}
+
+.qc-suite-item .ant-progress {
+  margin: 4px 0 0;
+  line-height: 1;
+}
+
+.qc-suite-actions {
+  display: none;
+  position: absolute;
+  top: 4px;
+  right: 6px;
+  background: inherit;
+}
+
+.qc-suite-item:hover .qc-suite-actions {
+  display: flex;
+}
+
+.qc-suite-empty,
+.qc-muted {
+  color: rgba(0, 0, 0, 0.35);
+  font-size: 12px;
+}
+
+.qc-time {
+  color: rgba(0, 0, 0, 0.55);
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.qc-suite-empty {
+  padding: 12px 10px;
+  line-height: 1.6;
+}
+
+/* 右：ケース本体 */
+.qc-case-main {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.qc-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 12px;
+  flex-wrap: wrap;
+}
+
+.qc-sub {
+  color: rgba(0, 0, 0, 0.45);
+  font-size: 12px;
+  margin-top: 2px;
+}
+
+.qc-ellipsis {
+  display: inline-block;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  vertical-align: bottom;
+}
+
+/* バグ一覧のタイトル：クリックで読取専用の詳細を開くリンク（左寄せ・省略表示） */
+.qc-bug-title-link {
+  display: inline-flex;
+  width: 100%;
+  justify-content: flex-start;
+  text-align: left;
+  height: auto;
+}
+
+.qc-summary-bar {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  margin-top: 12px;
+  padding: 10px 12px;
+  border-radius: 8px;
+  background: rgba(0, 0, 0, 0.02);
+  color: rgba(0, 0, 0, 0.65);
+  font-size: 13px;
+  font-variant-numeric: tabular-nums;
+  flex-wrap: wrap;
+}
+
+/* ============ バグ詳細（読み取り専用ドロワー） ============ */
+
+/* ヘッダー：バグ番号チップ＋タイトル */
+.qc-detail-head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+
+.qc-detail-no {
+  flex: 0 0 auto;
+  padding: 2px 10px;
+  border-radius: 7px;
+  background: rgba(22, 119, 255, 0.1);
+  color: #1677ff;
+  font-size: 13px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.02em;
+}
+
+.qc-detail-title {
+  font-weight: 600;
+}
+
+.qc-bug-detail {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+/* ステータス系バッジ列 */
+.qc-detail-badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.qc-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 5px 14px;
+  border: 1px solid transparent;
+  border-radius: 999px;
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1.5;
+  white-space: nowrap;
+}
+
+.qc-badge .qc-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  flex: 0 0 auto;
+}
+
+/* メタ情報グリッド */
+.qc-detail-grid {
+  display: flex;
+  flex-direction: column;
+  border: 1px solid rgba(5, 5, 5, 0.06);
+  border-radius: 12px;
+  overflow: hidden;
+  background: #fff;
+}
+
+.qc-detail-row {
+  display: grid;
+  grid-template-columns: 160px 1fr;
+  align-items: baseline;
+  gap: 16px;
+  padding: 14px 20px;
+}
+
+.qc-detail-row + .qc-detail-row {
+  border-top: 1px solid rgba(5, 5, 5, 0.045);
+}
+
+.qc-detail-row-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  color: rgba(0, 0, 0, 0.45);
+  font-size: 14px;
+}
+
+.qc-detail-row-icon {
+  color: rgba(0, 0, 0, 0.3);
+  font-size: 15px;
+}
+
+.qc-detail-row-value {
+  min-width: 0;
+  color: rgba(0, 0, 0, 0.85);
+  font-size: 14px;
+  word-break: break-word;
+}
+
+/* 説明セクション */
+.qc-detail-section-title {
+  margin-bottom: 10px;
+  color: rgba(0, 0, 0, 0.45);
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.qc-bug-desc {
+  white-space: pre-wrap;
+  word-break: break-word;
+  padding: 18px 20px;
+  border: 1px solid rgba(5, 5, 5, 0.06);
+  border-radius: 12px;
+  background: rgba(0, 0, 0, 0.015);
+  line-height: 1.8;
+  font-size: 14px;
+}
+
+.qc-bug-desc-empty {
+  color: rgba(0, 0, 0, 0.35);
+  font-style: italic;
+}
+
+/* 富文本説明の貼图：ドロワー幅に収める */
+.qc-bug-desc img {
+  max-width: 100%;
+  height: auto;
+  border-radius: 6px;
+  margin: 4px 0;
+}
+
+/* ダークテーマ */
+[data-theme="dark"] .qc-suites,
+html.dark .qc-suites {
+  background: transparent;
+  border-color: rgba(255, 255, 255, 0.12);
+}
+
+[data-theme="dark"] .qc-suite-item.active,
+html.dark .qc-suite-item.active {
+  background: rgba(22, 119, 255, 0.18);
+}
+
+[data-theme="dark"] .qc-muted,
+[data-theme="dark"] .qc-sub,
+[data-theme="dark"] .qc-suite-empty,
+[data-theme="dark"] .qc-suite-count,
+html.dark .qc-muted,
+html.dark .qc-sub,
+html.dark .qc-suite-empty,
+html.dark .qc-suite-count {
+  color: rgba(255, 255, 255, 0.4);
+}
+
+[data-theme="dark"] .qc-time,
+html.dark .qc-time {
+  color: rgba(255, 255, 255, 0.55);
+}
+
+[data-theme="dark"] .qc-summary-bar,
+[data-theme="dark"] .qc-bug-desc,
+html.dark .qc-summary-bar,
+html.dark .qc-bug-desc {
+  background: rgba(255, 255, 255, 0.04);
+  color: rgba(255, 255, 255, 0.7);
+}
+
+[data-theme="dark"] .qc-detail-grid,
+html.dark .qc-detail-grid {
+  background: transparent;
+  border-color: rgba(255, 255, 255, 0.12);
+}
+
+[data-theme="dark"] .qc-detail-row + .qc-detail-row,
+html.dark .qc-detail-row + .qc-detail-row {
+  border-top-color: rgba(255, 255, 255, 0.08);
+}
+
+[data-theme="dark"] .qc-detail-row-value,
+html.dark .qc-detail-row-value {
+  color: rgba(255, 255, 255, 0.85);
+}
+
+[data-theme="dark"] .qc-detail-row-label,
+[data-theme="dark"] .qc-detail-section-title,
+html.dark .qc-detail-row-label,
+html.dark .qc-detail-section-title {
+  color: rgba(255, 255, 255, 0.45);
+}
+
+[data-theme="dark"] .qc-detail-row-icon,
+[data-theme="dark"] .qc-bug-desc-empty,
+html.dark .qc-detail-row-icon,
+html.dark .qc-bug-desc-empty {
+  color: rgba(255, 255, 255, 0.35);
+}
+
+[data-theme="dark"] .qc-bug-desc,
+html.dark .qc-bug-desc {
+  border-color: rgba(255, 255, 255, 0.12);
+}
+
+[data-theme="dark"] .qc-detail-no,
+html.dark .qc-detail-no {
+  background: rgba(22, 119, 255, 0.2);
+  color: #69b1ff;
+}
+
+/* ============ バグ一覧 ============ */
+
+.qc-bugs {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+/* 概況行：数字はクリックで絞り込みに直結 */
+.qc-bug-overview {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  row-gap: 4px;
+  color: rgba(0, 0, 0, 0.55);
+  font-size: 13px;
+}
+
+.qc-bug-overview button {
+  all: unset;
+  display: inline-flex;
+  align-items: baseline;
+  gap: 6px;
+  padding: 0 14px;
+  border-left: 1px solid rgba(5, 5, 5, 0.1);
+  cursor: pointer;
+}
+
+.qc-bug-overview button:first-child {
+  padding-left: 0;
+  border-left: 0;
+}
+
+.qc-bug-overview button:disabled {
+  cursor: default;
+}
+
+.qc-bug-overview button:focus-visible {
+  outline: 2px solid #1677ff;
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+.qc-bug-overview b {
+  color: rgba(0, 0, 0, 0.88);
+  font-size: 16px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+.qc-bug-overview button:not(:disabled):hover b {
+  text-decoration: underline;
+}
+
+.qc-bug-overview b.is-danger {
+  color: #e5484d;
+}
+
+.qc-bug-overview b.is-warn {
+  color: #d46b08;
+}
+
+.qc-bug-overview-week {
+  margin-left: auto;
+  color: rgba(0, 0, 0, 0.4);
+  font-size: 12px;
+}
+
+/* 状態チップ */
+.qc-status-chips {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+}
+
+.qc-status-chips button {
+  all: unset;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 2px 12px;
+  border: 1px solid rgba(5, 5, 5, 0.12);
+  border-radius: 999px;
+  background: #fff;
+  color: rgba(0, 0, 0, 0.65);
+  font-size: 13px;
+  line-height: 22px;
+  cursor: pointer;
+  transition: border-color 0.15s;
+}
+
+.qc-status-chips button:hover {
+  border-color: rgba(22, 119, 255, 0.5);
+}
+
+.qc-status-chips button:focus-visible {
+  outline: 2px solid #1677ff;
+  outline-offset: 2px;
+}
+
+.qc-status-chips button i {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+}
+
+.qc-status-chip-n {
+  color: rgba(0, 0, 0, 0.35);
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+}
+
+.qc-status-chips button.is-on {
+  border-color: #1f2329;
+  background: #1f2329;
+  color: #fff;
+}
+
+.qc-status-chips button.is-on .qc-status-chip-n {
+  color: rgba(255, 255, 255, 0.6);
+}
+
+.qc-status-chips-sep {
+  width: 1px;
+  height: 16px;
+  margin: 0 4px;
+  background: rgba(5, 5, 5, 0.1);
+}
+
+/* ツールバー */
+.qc-bug-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
+.qc-bug-search {
+  width: 300px;
+}
+
+.qc-kbd {
+  padding: 0 5px;
+  border: 1px solid rgba(5, 5, 5, 0.15);
+  border-radius: 4px;
+  color: rgba(0, 0, 0, 0.35);
+  font-family: ui-monospace, Menlo, monospace;
+  font-size: 11px;
+  line-height: 16px;
+}
+
+.qc-grow {
+  flex: 1;
+}
+
+.qc-bug-toolbar .ant-badge {
+  margin-inline-start: 6px;
+}
+
+.qc-filter-chips {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  margin-top: -4px;
+}
+
+.qc-adv-panel {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(220px, 1fr));
+  gap: 12px 16px;
+  width: min(560px, 80vw);
+}
+
+.qc-adv-field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  color: rgba(0, 0, 0, 0.55);
+  font-size: 12px;
+}
+
+.qc-settings-panel {
+  width: 200px;
+}
+
+.qc-settings-panel .ant-btn {
+  justify-content: flex-start;
+}
+
+.qc-settings-label {
+  padding: 2px 8px 6px;
+  color: rgba(0, 0, 0, 0.45);
+  font-size: 12px;
+}
+
+.qc-settings-cols {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 0 8px 4px;
+}
+
+/* テーブル */
+.qc-bug-no {
+  color: rgba(0, 0, 0, 0.5);
+  font-family: ui-monospace, "SF Mono", Menlo, monospace;
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.qc-bug-title-cell {
+  min-width: 0;
+}
+
+.qc-bug-title {
+  display: block;
+  overflow: hidden;
+  color: rgba(0, 0, 0, 0.88);
+  font-weight: 500;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.qc-bug-title:hover {
+  color: #1677ff;
+}
+
+.qc-bug-meta {
+  display: flex;
+  gap: 12px;
+  overflow: hidden;
+  color: rgba(0, 0, 0, 0.4);
+  font-size: 12px;
+  line-height: 18px;
+  white-space: nowrap;
+}
+
+.qc-bug-meta > * {
+  flex: 0 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.qc-bug-meta-task {
+  display: inline-flex;
+  gap: 4px;
+  align-items: center;
+}
+
+.qc-bug-meta-reopen {
+  color: #d46b08;
+}
+
+/* 行内編集：普段は値だけ、行ホバーで ▾ を出す（誤操作と視覚ノイズを減らす） */
+.qc-inline-select {
+  max-width: 100%;
+}
+
+.qc-inline-select.ant-select .ant-select-arrow,
+.qc-inline-select.ant-select .ant-select-suffix {
+  opacity: 0;
+  transition: opacity 0.15s;
+}
+
+.qc-bug-table .ant-table-row:hover .qc-inline-select .ant-select-arrow,
+.qc-bug-table .ant-table-row:hover .qc-inline-select .ant-select-suffix,
+.qc-inline-select.ant-select-focused .ant-select-arrow,
+.qc-inline-select.ant-select-open .ant-select-suffix {
+  opacity: 1;
+}
+
+.qc-bug-table .ant-table-row:hover .qc-inline-select:hover {
+  border-radius: 6px;
+  background: rgba(0, 0, 0, 0.04);
+}
+
+.qc-sev,
+.qc-pri {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+}
+
+.qc-sev i {
+  width: 8px;
+  height: 8px;
+  border-radius: 2px;
+  background: var(--qc-c);
+}
+
+.qc-sev-high {
+  color: var(--qc-c);
+  font-weight: 600;
+}
+
+.qc-pri {
+  gap: 4px;
+}
+
+.qc-pri b {
+  color: var(--qc-c);
+  font-weight: 700;
+}
+
+.qc-status-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 0 9px 0 8px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 22px;
+  white-space: nowrap;
+}
+
+.qc-status-pill i {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: currentColor;
+}
+
+.qc-member {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  min-width: 0;
+}
+
+.qc-avatar {
+  display: grid;
+  flex: 0 0 auto;
+  place-items: center;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  color: #fff;
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.qc-member-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.qc-unassigned {
+  color: #d46b08;
+  font-size: 12px;
+}
+
+.qc-date {
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.qc-age {
+  display: block;
+  color: rgba(0, 0, 0, 0.4);
+  font-size: 11px;
+  line-height: 1.3;
+}
+
+.qc-age-warn {
+  color: #d46b08;
+}
+
+/* 行末「⋯」は行ホバー（またはメニュー展開中）でだけ出す */
+.qc-row-more {
+  opacity: 0;
+}
+
+.qc-bug-table .ant-table-row:hover .qc-row-more,
+.qc-row-more.ant-dropdown-open,
+.qc-row-more:focus-visible {
+  opacity: 1;
+}
+
+/* 完了・対応せずは沈める（未処理が浮いて見えるように） */
+.qc-bug-row-done > td {
+  color: rgba(0, 0, 0, 0.45);
+}
+
+.qc-bug-row-done .qc-bug-title {
+  color: rgba(0, 0, 0, 0.5);
+  font-weight: 400;
+}
+
+.qc-bug-row-done .qc-sev,
+.qc-bug-row-done .qc-pri,
+.qc-bug-row-done .qc-member {
+  opacity: 0.55;
+}
+
+/* 一括操作バー */
+.qc-batch-bar {
+  position: fixed;
+  bottom: calc(24px + env(safe-area-inset-bottom, 0px));
+  left: 50%;
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  padding: 6px 8px 6px 16px;
+  border-radius: 10px;
+  background: #1f2329;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.25);
+  color: #fff;
+  font-size: 13px;
+  white-space: nowrap;
+  transform: translateX(-50%);
+}
+
+.qc-batch-bar strong {
+  margin-right: 8px;
+}
+
+.qc-batch-bar .ant-btn-variant-text:not(.ant-btn-dangerous) {
+  color: rgba(255, 255, 255, 0.88);
+}
+
+.qc-batch-bar .ant-btn-variant-text:not(:disabled):hover {
+  background: rgba(255, 255, 255, 0.12);
+}
+
+.qc-batch-bar .ant-btn-dangerous {
+  color: #ff8a8a;
+}
+
+.qc-batch-sep {
+  width: 1px;
+  height: 16px;
+  margin: 0 4px;
+  background: rgba(255, 255, 255, 0.2);
+}
+
+/* ダークテーマ（バグ一覧） */
+[data-theme="dark"] .qc-bug-overview,
+html.dark .qc-bug-overview {
+  color: rgba(255, 255, 255, 0.55);
+}
+
+[data-theme="dark"] .qc-bug-overview b,
+html.dark .qc-bug-overview b,
+[data-theme="dark"] .qc-bug-title,
+html.dark .qc-bug-title {
+  color: rgba(255, 255, 255, 0.88);
+}
+
+[data-theme="dark"] .qc-bug-overview button,
+html.dark .qc-bug-overview button,
+[data-theme="dark"] .qc-status-chips-sep,
+html.dark .qc-status-chips-sep {
+  border-color: rgba(255, 255, 255, 0.12);
+}
+
+[data-theme="dark"] .qc-status-chips button,
+html.dark .qc-status-chips button {
+  border-color: rgba(255, 255, 255, 0.15);
+  background: transparent;
+  color: rgba(255, 255, 255, 0.7);
+}
+
+[data-theme="dark"] .qc-status-chips button.is-on,
+html.dark .qc-status-chips button.is-on {
+  border-color: rgba(255, 255, 255, 0.85);
+  background: rgba(255, 255, 255, 0.85);
+  color: #141414;
+}
+
+[data-theme="dark"] .qc-status-chips button.is-on .qc-status-chip-n,
+html.dark .qc-status-chips button.is-on .qc-status-chip-n {
+  color: rgba(0, 0, 0, 0.5);
+}
+
+[data-theme="dark"] .qc-bug-no,
+[data-theme="dark"] .qc-bug-meta,
+[data-theme="dark"] .qc-age,
+[data-theme="dark"] .qc-status-chip-n,
+[data-theme="dark"] .qc-bug-row-done > td,
+[data-theme="dark"] .qc-bug-row-done .qc-bug-title,
+html.dark .qc-bug-no,
+html.dark .qc-bug-meta,
+html.dark .qc-age,
+html.dark .qc-status-chip-n,
+html.dark .qc-bug-row-done > td,
+html.dark .qc-bug-row-done .qc-bug-title {
+  color: rgba(255, 255, 255, 0.45);
+}
+
+[data-theme="dark"] .qc-batch-bar,
+html.dark .qc-batch-bar {
+  background: #2b2f36;
+}

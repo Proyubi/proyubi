@@ -1,0 +1,108 @@
+server:
+  # 本地直跑默认 38082；容器里由 SERVER_PORT 覆盖
+  port: ${SERVER_PORT:38082}
+
+spring:
+  application:
+    name: proyubi-server
+
+  profiles:
+    # 由 Maven Profile 注入（pom.xml <profiles>），默认 dev
+    active: '@profiles.active@'
+
+  servlet:
+    multipart:
+      # 1 ファイル 50MB はモックアップの zip（Claude Design のエクスポートは画像込みで 10MB 前後）。
+      # zip の上限そのものは proyubi.pm.mockup.max-zip-bytes で見る。画像系アップロードは各 Controller / StorageService 側で個別に上限を見ている。
+      max-file-size: 50MB
+      max-request-size: 60MB
+
+  jackson:
+    serialization:
+      # 日期序列化为 ISO-8601 字符串，而非时间戳数组
+      write-dates-as-timestamps: false
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+
+# 邮件发送（验证码、密码重置、邀请）
+# 优先 Resend HTTP API；未配置 RESEND_API_KEY 时退回 SMTP / log-only。
+mail:
+  from: ${MAIL_FROM:Proyubi <no-reply@proyubi.local>}
+  resend:
+    api-key: ${RESEND_API_KEY:}
+
+sa-token:
+  token-name: satoken
+  is-concurrent: true
+  is-share: false
+  timeout: 2592000
+  is-print: false
+
+# 当前部署的区域（决定 IdentityService 启用哪些 AuthProvider、新建租户写入的 region 字段）
+# 取值见 ai.proyubi.regions.region.Region：CN / JP / GLOBAL
+app:
+  region: ${APP_REGION:JP}
+  # Web 前端基础 URL（邀请邮件里的链接等 deep link 用）
+  web-base-url: ${APP_WEB_BASE_URL:http://localhost:8000}
+  # CORS 白名单（逗号分隔）
+  cors:
+    allowed-origins: ${APP_CORS_ALLOWED_ORIGINS:http://localhost:8000}
+
+# Google OAuth 登录
+# Google Cloud Console → APIs & Services → Credentials 创建 OAuth 2.0 Client，
+# Authorized redirect URIs 填 {API_BASE}/app/auth/oauth/google/callback。未配置时前端隐藏 Google 登录。
+google:
+  oauth:
+    client-id: ${GOOGLE_OAUTH_CLIENT_ID:}
+    client-secret: ${GOOGLE_OAUTH_CLIENT_SECRET:}
+    # 后端接收 Google 回调的 URL，必须与 Console 里注册的完全一致（仅兜底，见 allowed-redirect-hosts）
+    redirect-uri: ${GOOGLE_OAUTH_REDIRECT_URI:http://localhost:38082/app/auth/oauth/google/callback}
+    # OAuth 成功后把用户带回的前端页面
+    default-front-redirect: ${GOOGLE_OAUTH_FRONT_REDIRECT:http://localhost:8000/oauth/callback}
+    # 一份后端服务多个前端域名时的 host 白名单（逗号分隔）；命中的域按该域动态生成回调。留空=不按域动态。
+    allowed-redirect-hosts: ${GOOGLE_OAUTH_ALLOWED_HOSTS:}
+    # 浏览器视角的后端回调路径（含反代前缀；prod 经 nginx 带 /api，dev 直连无前缀）
+    callback-path: ${GOOGLE_OAUTH_CALLBACK_PATH:/api/app/auth/oauth/google/callback}
+    # 原生 app 自定义回调 scheme 白名单（逗号分隔）。留空=不放行任何自定义 scheme。
+    allowed-redirect-schemes: ${GOOGLE_OAUTH_ALLOWED_SCHEMES:}
+  # Google Picker（資料：从 Google ドライブ 选文件登记，doc/design/pm-drive-docs.md §7）
+  # 三项都是浏览器端公开值；任一为空 → /app/pm/docs/picker-config 返回 enabled=false，前端隐藏入口。
+  picker:
+    client-id: ${GOOGLE_PICKER_CLIENT_ID:${GOOGLE_OAUTH_CLIENT_ID:}}
+    api-key: ${GOOGLE_PICKER_API_KEY:}
+    app-id: ${GOOGLE_CLOUD_PROJECT_NUMBER:}
+
+# Sign in with Apple（只验签 identityToken，所以只需声明允许的 aud）
+apple:
+  oauth:
+    # 允许的 aud 白名单（逗号分隔，iOS Bundle ID / Services ID）。留空 = Apple 登录未配置。
+    client-ids: ${APPLE_OAUTH_CLIENT_IDS:}
+
+proyubi:
+  # 多租户隔离。MULTI=SaaS 多租户，按 TenantContext 强制隔离带 tenant_id 的业务表；
+  # SINGLE=自托管单租户部署，不做隔离过滤。
+  tenancy:
+    mode: ${PROYUBI_TENANCY_MODE:${PULLCORD_TENANCY_MODE:MULTI}}
+  # 机械用内部接口（/internal/**，pm-mcp 调用）的 API-Key。空值时内部接口一律拒绝访问。
+  internal-api:
+    key: ${PM_INTERNAL_API_KEY:}
+  pm:
+    # 公开的 MCP 服务基址（不含尾斜杠）。用户「設定→MCP設定」拿到的 URL = {base}/t/{token}/mcp。
+    mcp:
+      base-url: ${PM_MCP_BASE_URL:http://localhost:3110}
+    # モックアップ共有（doc/design/pm-mockup.md）。raw-base-url は PM と同一ドメインでもよい（CSP sandbox で隔離）。
+    mockup:
+      raw-base-url: ${PM_MOCKUP_RAW_BASE_URL:http://localhost:38082}
+      # 空なら起動ごとにランダム（再起動で署名 URL が無効化、dev 向け）。prod は必ず設定
+      sign-secret: ${PM_MOCKUP_SIGN_SECRET:}
+      web-base-url: ${PM_MOCKUP_WEB_BASE_URL:http://localhost:8000}
+      frame-ancestors: ${PM_MOCKUP_FRAME_ANCESTORS:http://localhost:8000}
+      # 入口 HTML 単体 5MB / zip 本体 50MB / zip 展開後の合計 100MB / ファイル数 500
+      max-bytes: 5242880
+      max-zip-bytes: 52428800
+      max-total-bytes: 104857600
+      max-files: 500

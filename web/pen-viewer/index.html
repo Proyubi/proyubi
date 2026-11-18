@@ -1,0 +1,27 @@
+<!doctype html>
+<html lang="ja">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>OpenPencil viewer</title>
+    <style>
+      html, body, #app { margin: 0; height: 100%; overflow: hidden; background: #f3f3f3; }
+      /* ドラッグでパンできるので手の形。親ページの iframe（.pm-pen-viewer）も同じ grab にしてある：
+         描き直しで iframe のカーソル更新が遅れると親のカーソルが一瞬出るため、形が違うと点滅して見える */
+      .opv-host {
+        position: relative; height: 100%; touch-action: none; cursor: grab;
+        /* Pencil と同じ点描の背景。間隔・位置は main.ts がパン・ズームに合わせて変える */
+        background-color: var(--opv-page, #f5f5f5);
+        background-image: radial-gradient(circle, rgba(0, 0, 0, 0.16) 1px, transparent 1.2px);
+        background-size: var(--opv-dot-gap, 16px) var(--opv-dot-gap, 16px);
+        background-position: var(--opv-dot-x, 0) var(--opv-dot-y, 0);
+      }
+      .opv-host.is-panning { cursor: grabbing; }
+      .opv-msg { position: absolute; inset: 0; display: grid; place-items: center; font: 13px system-ui, sans-serif; color: #666; }
+    </style>
+  </head>
+  <body>
+    <div id="app"></div>
+    <script type="module" src="./main.ts"></script>
+  </body>
+</html>

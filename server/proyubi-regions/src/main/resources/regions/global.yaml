@@ -1,0 +1,16 @@
+# 全球区域配置（默认）
+auth:
+  email: enabled
+  google: enabled
+  # Sign in with Apple（App Store 审核指南 4.8 要求的等价登录方式）
+  apple: enabled
+
+account_model:
+  single_user: enabled
+  default: single_user
+
+capabilities:
+  multi_member: enabled_with_limit
+  collaboration: enabled
+  export: enabled_with_limit
+

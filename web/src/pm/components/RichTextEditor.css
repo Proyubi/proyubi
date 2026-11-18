@@ -1,0 +1,77 @@
+.pm-rte {
+  border: 1px solid #d9d9d9;
+  border-radius: 8px;
+  overflow: hidden;
+}
+.pm-rte:focus-within {
+  border-color: #2f6bff;
+  box-shadow: 0 0 0 2px rgba(47, 107, 255, 0.1);
+}
+.pm-rte-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 8px;
+  background: #fafafa;
+  border-bottom: 1px solid #eef0f4;
+}
+.pm-rte-toolbar button {
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  width: 26px;
+  height: 26px;
+  border-radius: 5px;
+  color: #4b5563;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+.pm-rte-toolbar button:hover {
+  background: #eef2ff;
+  color: #2f6bff;
+}
+.pm-rte-txt {
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1;
+}
+.pm-rte-sep {
+  width: 1px;
+  height: 16px;
+  margin: 0 2px;
+  background: #e5e7eb;
+}
+.pm-rte-hint {
+  margin-left: auto;
+  font-size: 12px;
+  color: #9aa3b2;
+}
+.pm-rte-body {
+  min-height: 120px;
+  max-height: 320px;
+  overflow-y: auto;
+  padding: 10px 12px;
+  font-size: 14px;
+  line-height: 1.6;
+  outline: none;
+}
+.pm-rte-body:empty::before {
+  content: attr(data-placeholder);
+  color: #bfbfbf;
+}
+.pm-rte-body img {
+  max-width: 100%;
+  border-radius: 6px;
+  margin: 4px 0;
+  display: block;
+  cursor: pointer;
+}
+.pm-rte-body img.pm-rte-img-sel {
+  outline: 2px solid #2f6bff;
+  outline-offset: 2px;
+}
+.pm-rte-body ul {
+  padding-left: 22px;
+  margin: 6px 0;
+}

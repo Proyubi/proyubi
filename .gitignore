@@ -1,0 +1,46 @@
+# ===== 私有：服务器信息、内部文档、密钥（永不进 git）=====
+/private/
+
+# ===== 环境变量 =====
+.env
+.env.*
+!.env.example
+!.env.*.example
+**/.env
+**/.env.*
+!**/.env.example
+!**/.env.*.example
+
+# ===== 构建产物 / 依赖 =====
+node_modules/
+.pnpm-store/
+target/
+dist/
+coverage/
+.umi/
+.umi-production/
+.umi-test/
+*.tsbuildinfo
+/web/public/pen-viewer
+.flattened-pom.xml
+
+# ===== OS / 编辑器 / 日志 =====
+.DS_Store
+Thumbs.db
+.idea/
+*.iml
+.vscode/
+*.log
+*.tmp
+__pycache__/
+
+# ===== 备份 / 压缩包 =====
+*.bak
+*.tgz
+*.tar.gz
+*.zip
+!**/test/**/*.zip
+
+# 私密部署配置（即使误放到 private/ 之外也不提交）
+**/server.env
+**/db.env

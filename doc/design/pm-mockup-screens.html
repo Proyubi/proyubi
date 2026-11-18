@@ -1,0 +1,411 @@
+<!doctype html>
+<html lang="ja">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>モックアップ共有 画面</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700&family=JetBrains+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: spec-sheet page; each screen is a framed app window with a numbered caption (numbers = screen IDs in the spec) */
+:root{
+  --bg:#f3f5f9; --paper:#ffffff; --fg:#1f2430; --muted:#646c7c; --line:#e3e7ef; --soft:#f6f8fc;
+  --primary:#1677ff; --primary-soft:#e8f1ff; --ok:#1f9d55; --ok-soft:#e6f6ec; --warn:#d97706; --warn-soft:#fff4e0;
+  --bad:#d4380d; --bad-soft:#fff0eb; --ai:#6b4fd8; --ai-soft:#f1edff; --side:#0f1a2e; --side-fg:#c8d1e1;
+  --font:"Noto Sans JP","Hiragino Sans","Yu Gothic",system-ui,sans-serif; --mono:"JetBrains Mono",ui-monospace,Menlo,monospace;
+  --shadow:0 1px 2px rgba(20,30,60,.06),0 8px 24px rgba(20,30,60,.06);
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#0d1119; --paper:#161b26; --fg:#e4e8f0; --muted:#98a1b3; --line:#283042; --soft:#1b2130;
+  --primary:#4c93ff; --primary-soft:#172a4a; --ok:#3fbf75; --ok-soft:#14301f; --warn:#f0a53a; --warn-soft:#352812;
+  --bad:#ff7a52; --bad-soft:#3a1d14; --ai:#a591ff; --ai-soft:#251e45; --side:#0a0f1a; --side-fg:#aab4c7;
+  --shadow:0 1px 2px rgba(0,0,0,.3),0 8px 24px rgba(0,0,0,.25); color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0d1119; --paper:#161b26; --fg:#e4e8f0; --muted:#98a1b3; --line:#283042; --soft:#1b2130;
+  --primary:#4c93ff; --primary-soft:#172a4a; --ok:#3fbf75; --ok-soft:#14301f; --warn:#f0a53a; --warn-soft:#352812;
+  --bad:#ff7a52; --bad-soft:#3a1d14; --ai:#a591ff; --ai-soft:#251e45; --side:#0a0f1a; --side-fg:#aab4c7;
+  --shadow:0 1px 2px rgba(0,0,0,.3),0 8px 24px rgba(0,0,0,.25); color-scheme:dark}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--fg);font-family:var(--font);font-size:14px;line-height:1.6;margin:0;padding:32px 16px 64px}
+.wrap{max-width:1180px;margin:0 auto;display:grid;gap:48px}
+header.top{display:flex;flex-wrap:wrap;gap:16px;align-items:flex-end;justify-content:space-between}
+header.top h1{font-size:26px;margin:0;text-wrap:balance;letter-spacing:.01em}
+header.top p{margin:4px 0 0;color:var(--muted);max-width:62ch}
+.lang{display:inline-flex;border:1px solid var(--line);border-radius:8px;overflow:hidden;background:var(--paper)}
+.lang button{border:0;background:none;color:var(--muted);font:500 13px var(--font);padding:6px 14px;cursor:pointer}
+.lang button[aria-pressed="true"]{background:var(--primary);color:#fff}
+.lang button:focus-visible,.btn:focus-visible{outline:2px solid var(--primary);outline-offset:2px}
+.toc{display:flex;flex-wrap:wrap;gap:8px}
+.toc a{font-size:13px;color:var(--fg);text-decoration:none;border:1px solid var(--line);background:var(--paper);padding:4px 10px;border-radius:999px}
+.toc a:hover{border-color:var(--primary);color:var(--primary)}
+.toc b{font-family:var(--mono);font-weight:500;color:var(--muted);margin-right:6px}
+section.screen{display:grid;gap:14px;scroll-margin-top:16px}
+.cap{display:grid;grid-template-columns:auto 1fr;gap:4px 14px;align-items:baseline}
+.cap .id{font-family:var(--mono);font-size:13px;color:var(--primary);border:1px solid var(--primary);border-radius:6px;padding:1px 7px}
+.cap h2{margin:0;font-size:19px;text-wrap:balance}
+.cap p{grid-column:2;margin:0;color:var(--muted);max-width:75ch}
+.notes{grid-column:2;display:flex;flex-wrap:wrap;gap:6px;margin-top:4px}
+.notes span{font-size:12px;background:var(--soft);border:1px solid var(--line);border-radius:6px;padding:2px 8px;color:var(--muted)}
+/* app window */
+.win{background:var(--paper);border:1px solid var(--line);border-radius:12px;box-shadow:var(--shadow);overflow:hidden;min-width:0}
+.bar{display:flex;align-items:center;gap:8px;padding:8px 12px;border-bottom:1px solid var(--line);background:var(--soft)}
+.dots{display:flex;gap:5px}.dots i{width:9px;height:9px;border-radius:50%;background:var(--line);display:block}
+.url{font-family:var(--mono);font-size:12px;color:var(--muted);background:var(--paper);border:1px solid var(--line);border-radius:6px;padding:2px 10px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0}
+.app{display:grid;grid-template-columns:200px 1fr;min-height:420px}
+.side{background:var(--side);color:var(--side-fg);padding:14px 10px;display:grid;align-content:start;gap:2px;font-size:13px}
+.side .logo{color:#fff;font-weight:700;padding:4px 10px 14px;letter-spacing:.02em}
+.side a{display:flex;justify-content:space-between;align-items:center;padding:7px 10px;border-radius:6px;color:inherit;text-decoration:none}
+.side a.on{background:var(--primary);color:#fff}
+.side a.new{color:#fff}
+.side .grp{font-size:11px;letter-spacing:.08em;text-transform:uppercase;opacity:.55;padding:12px 10px 4px}
+.cnt{background:var(--bad);color:#fff;border-radius:999px;font-size:11px;padding:0 7px;line-height:18px;font-variant-numeric:tabular-nums}
+.main{padding:18px;display:grid;gap:14px;align-content:start;min-width:0}
+.ph{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:center;gap:10px}
+.ph h3{margin:0;font-size:17px}
+.btn{font:500 13px var(--font);border:1px solid var(--line);background:var(--paper);color:var(--fg);border-radius:6px;padding:5px 12px;cursor:pointer;white-space:nowrap}
+.btn.pri{background:var(--primary);border-color:var(--primary);color:#fff}
+.btn.ok{background:var(--ok);border-color:var(--ok);color:#fff}
+.btn.ghost{border-style:dashed}
+.btn.sm{padding:2px 9px;font-size:12px}
+.row{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.card{border:1px solid var(--line);border-radius:10px;background:var(--paper);min-width:0}
+.card>.hd{display:flex;flex-wrap:wrap;gap:8px;justify-content:space-between;align-items:center;padding:10px 14px;border-bottom:1px solid var(--line)}
+.card>.hd h4{margin:0;font-size:14px;display:flex;gap:8px;align-items:center}
+.card>.bd{padding:12px 14px;display:grid;gap:10px}
+.ai-badge{font-size:11px;font-weight:500;color:var(--ai);background:var(--ai-soft);border-radius:4px;padding:1px 6px;letter-spacing:.02em}
+.chip{display:inline-flex;align-items:center;gap:4px;font-size:12px;border-radius:4px;padding:1px 7px;white-space:nowrap}
+.c-bad{background:var(--bad-soft);color:var(--bad)}.c-warn{background:var(--warn-soft);color:var(--warn)}
+.c-ok{background:var(--ok-soft);color:var(--ok)}.c-pri{background:var(--primary-soft);color:var(--primary)}
+.c-ai{background:var(--ai-soft);color:var(--ai)}.c-mute{background:var(--soft);color:var(--muted);border:1px solid var(--line)}
+.grid2{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:14px}
+.grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+.kpi{border:1px solid var(--line);border-radius:8px;padding:10px 12px;display:grid;gap:2px}
+.kpi .n{font-size:22px;font-weight:700;font-variant-numeric:tabular-nums}
+.kpi .l{font-size:12px;color:var(--muted)}
+.summary{background:var(--ai-soft);border-radius:8px;padding:10px 12px;font-size:13px;line-height:1.7}
+ul.items{list-style:none;margin:0;padding:0;display:grid}
+ul.items li{display:grid;grid-template-columns:auto 1fr auto;gap:10px;align-items:center;padding:8px 0;border-top:1px dashed var(--line);font-size:13px}
+ul.items li:first-child{border-top:0}
+.sub{color:var(--muted);font-size:12px}
+.mono{font-family:var(--mono);font-size:12px}
+table{border-collapse:collapse;width:100%;font-size:13px}
+th,td{text-align:left;padding:8px 10px;border-bottom:1px solid var(--line);vertical-align:top}
+th{font-weight:500;color:var(--muted);font-size:12px;background:var(--soft);white-space:nowrap}
+td.num{font-variant-numeric:tabular-nums;text-align:right}
+.tbl{overflow-x:auto}
+.split{display:grid;grid-template-columns:minmax(0,1.1fr) minmax(0,1fr);gap:14px}
+.diff{display:grid;grid-template-columns:120px 1fr 1fr;border:1px solid var(--line);border-radius:8px;overflow:hidden;font-size:13px}
+.diff>div{padding:7px 10px;border-top:1px solid var(--line)}
+.diff>.h{background:var(--soft);color:var(--muted);font-size:12px;border-top:0}
+.diff .del{background:var(--bad-soft);text-decoration:line-through;text-decoration-color:var(--bad)}
+.diff .add{background:var(--ok-soft)}
+.src{border-left:3px solid var(--line);padding:4px 10px;font-size:12px;color:var(--muted);background:var(--soft);border-radius:0 6px 6px 0}
+.src b{color:var(--fg);font-weight:500}
+.vs{display:grid;grid-template-columns:1fr auto 1fr;gap:10px;align-items:stretch}
+.vs .q{border:1px solid var(--line);border-radius:8px;padding:10px 12px;font-size:13px;display:grid;gap:4px}
+.vs .arrow{align-self:center;color:var(--bad);font-weight:700}
+.doc{border:1px solid var(--line);border-radius:8px;padding:16px 18px;display:grid;gap:10px;font-size:13px;line-height:1.8}
+.doc h5{margin:0;font-size:13px;border-left:3px solid var(--primary);padding-left:8px}
+.doc p{margin:0}
+mark.bad{background:var(--bad-soft);color:var(--bad);border-bottom:2px solid var(--bad);padding:0 2px}
+mark.ok{background:none;color:inherit;border-bottom:1px dotted var(--ok)}
+.meter{height:8px;border-radius:99px;background:var(--soft);border:1px solid var(--line);overflow:hidden}
+.meter i{display:block;height:100%;background:var(--primary)}
+.meter.w i{background:var(--warn)}
+.tabs{display:flex;gap:18px;border-bottom:1px solid var(--line);font-size:13px}
+.tabs span{padding:8px 0;color:var(--muted)}
+.tabs span.on{color:var(--primary);border-bottom:2px solid var(--primary);font-weight:500}
+.drop{border:1.5px dashed var(--line);border-radius:10px;padding:14px;display:flex;flex-wrap:wrap;gap:10px;align-items:center;justify-content:space-between;background:var(--soft)}
+.file{display:flex;gap:8px;align-items:center;font-size:13px}
+.ftype{font-family:var(--mono);font-size:11px;border-radius:4px;padding:1px 6px;color:#fff;background:var(--ok)}
+.ftype.pdf{background:var(--bad)}.ftype.eml{background:var(--primary)}
+.foot{color:var(--muted);font-size:12px;border-top:1px solid var(--line);padding-top:16px}
+@media (max-width:820px){
+  .app{grid-template-columns:1fr}.side{display:none}
+  .split{grid-template-columns:1fr}.grid3{grid-template-columns:1fr 1fr}
+  .vs{grid-template-columns:1fr}.vs .arrow{justify-self:center;transform:rotate(90deg)}
+  .diff{grid-template-columns:90px 1fr 1fr}
+}
+@media (prefers-reduced-motion:no-preference){.btn,.toc a{transition:background .15s,border-color .15s,color .15s}}
+/* mockup-sharing additions: terminal, embedded fake mockup, version list, share page */
+.term{background:#0f1420;color:#d6dbe6;font-family:var(--mono);font-size:12.5px;line-height:1.7;padding:16px 18px;overflow-x:auto;white-space:pre}
+.term .p{color:#7aa2ff}.term .c{color:#8b93a6}.term .g{color:#5fd38d}.term .y{color:#f0c36a}.term .u{color:#7fd4ff;text-decoration:underline}
+.thumbs{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:12px}
+.thumb{border:1px solid var(--line);border-radius:10px;overflow:hidden;background:var(--paper);display:grid}
+.thumb .pv{height:120px;background:var(--soft);border-bottom:1px solid var(--line);padding:10px;display:grid;gap:5px;align-content:start}
+.thumb .pv i{display:block;height:8px;border-radius:3px;background:var(--line)}
+.thumb .pv i.b{background:var(--primary);opacity:.5;width:40%}
+.thumb .meta{padding:9px 11px;display:grid;gap:3px;font-size:13px}
+.thumb .meta b{font-weight:500}
+.thumb.add{place-items:center;border-style:dashed;color:var(--muted);font-size:13px;min-height:190px;text-align:center;padding:16px}
+.viewer{display:grid;grid-template-columns:minmax(0,1fr) 240px;min-height:470px}
+.vbar{display:flex;flex-wrap:wrap;gap:10px;align-items:center;justify-content:space-between;padding:10px 14px;border-bottom:1px solid var(--line)}
+.stage{background:repeating-conic-gradient(var(--soft) 0 25%,var(--paper) 0 50%) 0 0/18px 18px;padding:18px;display:grid;place-items:start center;min-width:0}
+.vers{border-left:1px solid var(--line);padding:12px;display:grid;gap:8px;align-content:start;font-size:13px}
+.ver{border:1px solid var(--line);border-radius:8px;padding:8px 10px;display:grid;gap:2px}
+.ver.on{border-color:var(--primary);background:var(--primary-soft)}
+.ver .t{display:flex;justify-content:space-between;gap:6px;align-items:center}
+.seg{display:inline-flex;border:1px solid var(--line);border-radius:6px;overflow:hidden}
+.seg span{padding:3px 10px;font-size:12px;color:var(--muted)}.seg span.on{background:var(--primary);color:#fff}
+/* the fake customer-facing page shown inside the iframe */
+.fake{width:100%;max-width:640px;background:#fff;color:#1f2430;border-radius:8px;box-shadow:0 6px 24px rgba(0,0,0,.12);overflow:hidden;font-size:12px;color-scheme:light}
+.fake .fh{background:#0b7a5c;color:#fff;padding:9px 14px;display:flex;justify-content:space-between;font-weight:500}
+.fake .fb{padding:12px 14px;display:grid;gap:10px}
+.fake .ff{display:flex;gap:6px;flex-wrap:wrap}
+.fake .ff span{border:1px solid #d7dde6;border-radius:5px;padding:3px 9px;background:#f7f9fb}
+.fake .ff span.on{background:#0b7a5c;color:#fff;border-color:#0b7a5c}
+.fake table{font-size:12px}.fake th{background:#f3f6f8;color:#5b6475}.fake td,.fake th{border-color:#e6eaf0;padding:6px 8px}
+.fake .st{border-radius:4px;padding:0 6px;font-size:11px}
+.fake .s1{background:#e6f6ec;color:#1f7a45}.fake .s2{background:#fff4e0;color:#a35f00}
+.fake .go{justify-self:end;background:#0b7a5c;color:#fff;border-radius:6px;padding:5px 14px;font-weight:500}
+.modal-bg{background:rgba(15,20,32,.45);padding:28px 16px;display:grid;place-items:center;min-height:420px}
+.modal{background:var(--paper);border-radius:12px;box-shadow:var(--shadow);width:100%;max-width:520px;display:grid}
+.modal .mh{padding:14px 18px;border-bottom:1px solid var(--line);display:flex;justify-content:space-between;font-weight:500}
+.modal .mb{padding:16px 18px;display:grid;gap:14px;font-size:13px}
+.modal .mf{padding:12px 18px;border-top:1px solid var(--line);display:flex;gap:8px;justify-content:flex-end}
+.field{display:grid;gap:5px}.field label{font-size:12px;color:var(--muted)}
+.input{border:1px solid var(--line);border-radius:6px;padding:6px 10px;display:flex;justify-content:space-between;gap:8px;align-items:center;min-width:0}
+.input .mono{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.switch{width:34px;height:18px;border-radius:99px;background:var(--ok);position:relative;flex:none}
+.switch::after{content:"";position:absolute;right:2px;top:2px;width:14px;height:14px;border-radius:50%;background:#fff}
+.share-top{display:flex;flex-wrap:wrap;gap:10px;justify-content:space-between;align-items:center;padding:10px 16px;border-bottom:1px solid var(--line);background:var(--paper)}
+.brand{display:flex;gap:8px;align-items:center;font-weight:700}
+.brand i{width:22px;height:22px;border-radius:6px;background:var(--primary);display:block}
+.callout{border:1px solid var(--line);border-left:3px solid var(--warn);border-radius:0 8px 8px 0;padding:10px 12px;font-size:13px;background:var(--paper)}
+@media (max-width:820px){.viewer{grid-template-columns:1fr}.vers{border-left:0;border-top:1px solid var(--line)}}
+</style>
+
+<div class="wrap">
+  <header class="top">
+    <div>
+      <h1 data-i="模型图共享 · UI 效果图|Mockup sharing · UI mockups">モックアップ共有 · 画面イメージ</h1>
+      <p data-i="把 Claude Code / Codex 生成的交互式 HTML 效果图发布到 PM，挂在任务或 Bug 上，再用自家域名分享给客户和营业。6 个画面，样例数据为虚构。|Publish interactive HTML mockups made in Claude Code / Codex to PM, attach them to tasks or bugs, and share them with clients and sales on our own domain. Six screens; sample data is fictional.">Claude Code / Codex で作ったインタラクティブな HTML モックアップを PM に公開し、タスクやバグに紐付け、自社ドメインのまま顧客・営業と共有します。6 画面。サンプルデータは架空です。</p>
+    </div>
+    <div class="lang" role="group" aria-label="Language">
+      <button type="button" data-l="ja" aria-pressed="true">日本語</button>
+      <button type="button" data-l="zh" aria-pressed="false">中文</button>
+      <button type="button" data-l="en" aria-pressed="false">EN</button>
+    </div>
+  </header>
+
+  <nav class="toc" aria-label="screens">
+    <a href="#m1"><b>M1</b><span data-i="从 Claude Code 发布|Publish from Claude Code">Claude Code から公開</span></a>
+    <a href="#m2"><b>M2</b><span data-i="任务详情 · 效果图标签|Task detail · Mockups tab">タスク詳細 · モックアップ</span></a>
+    <a href="#m3"><b>M3</b><span data-i="全屏预览 · 版本切换|Viewer · Versions">プレビュー · 版</span></a>
+    <a href="#m4"><b>M4</b><span data-i="分享设置|Share settings">共有設定</span></a>
+    <a href="#m5"><b>M5</b><span data-i="客户看到的分享页|What the client sees">顧客が見る共有ページ</span></a>
+    <a href="#m6"><b>M6</b><span data-i="项目效果图一览 · 编辑删除|Project list · Edit & delete">一覧 · 編集と削除</span></a>
+  </nav>
+
+  <!-- M1 -->
+  <section class="screen" id="m1">
+    <div class="cap">
+      <span class="id">M1</span><h2 data-i="从 Claude Code 发布|Publish from Claude Code">Claude Code から公開</h2>
+      <p data-i="说一句「发布到这个任务上」就行。pm-mcp 读取本地 HTML 文件直接上传，模型不必把整份 HTML 再输出一遍。传入 mockup_id 时作为新版本发布，链接不变。|Just say “publish this to the task”. pm-mcp reads the local HTML file and uploads it, so the model never re-emits the whole page. Passing mockup_id publishes a new version under the same link.">「このタスクに公開して」と頼むだけ。pm-mcp がローカルの HTML ファイルを読んでアップロードするため、モデルが HTML 全体を出力し直す必要はありません。mockup_id を渡すと同じリンクのまま新しい版になります。</p>
+      <div class="notes"><span>pm_publish_mockup</span><span>pm_list_mockups</span><span data-i="stdio：file_path · HTTP：html 字符串 ≤1MB|stdio: file_path · HTTP: html string ≤1MB">stdio：file_path · HTTP：html 文字列 ≤1MB</span></div>
+    </div>
+    <div class="win">
+      <div class="bar"><div class="dots"><i></i><i></i><i></i></div><div class="url">~/work/acme-logi — claude</div></div>
+<div class="term"><span class="p">&gt;</span> 出荷指示画面のモックアップ、PM の「出荷指示 一覧画面」タスクに公開して。客先レビュー用。
+
+<span class="c">● pm-mcp · pm_publish_mockup</span>
+  file_path   <span class="y">./mockups/shipping-list.html</span>  <span class="c">(84 KB)</span>
+  title       出荷指示 一覧画面
+  task        <span class="y">在庫連携 API 改修 / 出荷指示 一覧画面</span>
+  note        初版：絞り込みと一括出荷ボタン
+
+<span class="g">✓</span> 公開しました  <span class="c">v1 · by 山田（MCP）</span>
+  社内で見る   <span class="u">https://pm.example.com/projects/8f3k…/gantt?taskId=…&amp;mockup=m_7Qx2</span>
+  共有リンク   <span class="c">（未発行。発行する場合は「共有リンクも作って」と指示）</span>
+
+<span class="p">&gt;</span> お客様のフィードバックで「保留」ステータスを追加した。同じモックアップの新しい版として出して。
+
+<span class="c">● pm-mcp · pm_publish_mockup</span>  mockup_id <span class="y">m_7Qx2</span>  note 保留ステータス追加
+<span class="g">✓</span> v2 を公開しました。共有リンクは同じ URL のまま v2 を表示します。</div>
+    </div>
+  </section>
+
+  <!-- M2 -->
+  <section class="screen" id="m2">
+    <div class="cap">
+      <span class="id">M2</span><h2 data-i="任务详情 · 效果图标签|Task detail · Mockups tab">タスク詳細 · モックアップタブ</h2>
+      <p data-i="任务和 Bug 的详情里都有这个标签。卡片显示最新版本、发布人和是否已对外分享。也可以把 HTML 文件直接拖进来上传。|Both task and bug details get this tab. Each card shows the latest version, who published it, and whether it is shared. HTML files can also be dropped in directly.">タスク・バグ両方の詳細に追加。カードには最新版・公開者・共有中かどうかを表示。HTML ファイルのドラッグ＆ドロップでもアップロードできます。</p>
+    </div>
+    <div class="win">
+      <div class="bar"><div class="dots"><i></i><i></i><i></i></div><div class="url">pm.example.com/projects/8f3k…/gantt?taskId=…</div></div>
+      <div class="main">
+        <div class="ph">
+          <h3>出荷指示 一覧画面</h3>
+          <div class="row"><span class="chip c-pri" data-i="进行中|In progress">進行中</span><span class="sub">佐藤 · 10/01 – 10/09</span></div>
+        </div>
+        <div class="tabs"><span data-i="概要|Summary">概要</span><span data-i="评论|Comments">コメント 3</span><span data-i="链接|Links">リンク 1</span><span class="on" data-i="效果图 2|Mockups 2">モックアップ 2</span><span data-i="操作履历|History">操作履歴</span></div>
+        <div class="thumbs">
+          <div class="thumb">
+            <div class="pv"><i class="b"></i><i></i><i style="width:80%"></i><i></i><i style="width:60%"></i></div>
+            <div class="meta"><b>出荷指示 一覧画面</b><span class="sub" data-i="v2 · 山田（MCP）· 10/14 16:20|v2 · Yamada (MCP) · 10/14 16:20">v2 · 山田（MCP）· 10/14 16:20</span><div class="row"><span class="chip c-ok" data-i="分享中 · 至 10/31|Shared · until 10/31">共有中 · 10/31 まで</span></div></div>
+          </div>
+          <div class="thumb">
+            <div class="pv"><i class="b" style="width:30%"></i><i style="width:50%"></i><i></i><i></i></div>
+            <div class="meta"><b>出荷指示 詳細ダイアログ</b><span class="sub" data-i="v1 · 佐藤 · 10/12 11:05|v1 · Sato · 10/12 11:05">v1 · 佐藤 · 10/12 11:05</span><div class="row"><span class="chip c-mute" data-i="仅内部|Internal only">社内のみ</span></div></div>
+          </div>
+          <div class="thumb add"><span><b data-i="拖入 HTML 文件|Drop an HTML file">HTML ファイルをドロップ</b><br><span data-i="单个 .html · 最大 5MB|Single .html · up to 5 MB">単一の .html · 5MB まで</span></span></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- M3 -->
+  <section class="screen" id="m3">
+    <div class="cap">
+      <span class="id">M3</span><h2 data-i="全屏预览 · 版本切换|Viewer · Version switch">全画面プレビュー · 版の切り替え</h2>
+      <p data-i="页面在独立域名的沙箱 iframe 里运行，可以正常点击交互，但读不到 PM 的登录信息。右侧可切换历史版本，每个版本带说明。|The page runs in a sandboxed iframe on a separate domain: fully clickable, but unable to read the PM login. Past versions with notes are on the right.">ページは別ドメインのサンドボックス iframe 内で動作。クリック等の操作はそのまま可能ですが、PM のログイン情報には触れられません。右側で過去の版と変更メモを切り替えます。</p>
+      <div class="notes"><span>iframe sandbox="allow-scripts allow-forms allow-popups"</span><span>pm.example.com/mock/m/{versionId}?sig=…</span></div>
+    </div>
+    <div class="win">
+      <div class="bar"><div class="dots"><i></i><i></i><i></i></div><div class="url">pm.example.com/projects/8f3k…/mockups/m_7Qx2</div></div>
+      <div class="vbar">
+        <div class="row"><button class="btn sm" type="button" data-i="← 返回|← Back">← 戻る</button><b>出荷指示 一覧画面</b><span class="chip c-pri">v2</span></div>
+        <div class="row">
+          <div class="seg"><span class="on" data-i="桌面|Desktop">PC</span><span data-i="平板|Tablet">タブレット</span><span data-i="手机|Phone">スマホ</span></div>
+          <button class="btn sm" type="button" data-i="新窗口打开|Open in new tab">別タブで開く</button>
+          <button class="btn pri sm" type="button" data-i="分享…|Share…">共有…</button>
+        </div>
+      </div>
+      <div class="viewer">
+        <div class="stage">
+          <div class="fake">
+            <div class="fh"><span>ACME 物流 · 出荷指示</span><span>山田 花子 ▾</span></div>
+            <div class="fb">
+              <div class="ff"><span class="on">すべて 24</span><span>未出荷 9</span><span>出荷済 13</span><span>保留 2</span><span>📅 10/15</span></div>
+              <table><thead><tr><th>指示番号</th><th>出荷先</th><th>品目数</th><th>状態</th></tr></thead><tbody>
+                <tr><td>SH-10421</td><td>横浜第2センター</td><td class="num">12</td><td><span class="st s2">未出荷</span></td></tr>
+                <tr><td>SH-10420</td><td>(株)サンプル商事</td><td class="num">3</td><td><span class="st s1">出荷済</span></td></tr>
+                <tr><td>SH-10419</td><td>大阪南倉庫</td><td class="num">27</td><td><span class="st s2">未出荷</span></td></tr>
+              </tbody></table>
+              <span class="go">選択した 2 件を出荷</span>
+            </div>
+          </div>
+        </div>
+        <aside class="vers">
+          <b data-i="版本|Versions">版</b>
+          <div class="ver on"><div class="t"><b>v2</b><span class="sub">10/14 16:20</span></div><span data-i="保留状态追加|Added “On hold” status">保留ステータス追加</span><span class="sub">山田（MCP）· 86 KB</span></div>
+          <div class="ver"><div class="t"><b>v1</b><span class="sub">10/12 10:02</span></div><span data-i="初版：筛选和批量出货按钮|First draft: filters and bulk ship">初版：絞り込みと一括出荷ボタン</span><span class="sub">山田（MCP）· 84 KB</span></div>
+          <span class="sub" data-i="分享链接总是显示最新版本。|The share link always shows the latest version.">共有リンクは常に最新版を表示します。</span>
+        </aside>
+      </div>
+    </div>
+  </section>
+
+  <!-- M4 -->
+  <section class="screen" id="m4">
+    <div class="cap">
+      <span class="id">M4</span><h2 data-i="分享设置|Share settings">共有設定</h2>
+      <p data-i="生成不可猜测的链接，可设有效期，随时停用。停用后旧链接立即失效；重新生成会换一个新地址。|Creates an unguessable link with an optional expiry; it can be turned off at any time. Turning it off kills the old link immediately; regenerating issues a new address.">推測できないリンクを発行。有効期限を設定でき、いつでも停止できます。停止すると旧リンクは即座に無効、再発行すると新しい URL になります。</p>
+    </div>
+    <div class="win">
+      <div class="modal-bg">
+        <div class="modal" role="dialog" aria-label="share">
+          <div class="mh"><span data-i="分享「出荷指示 一覧画面」|Share “出荷指示 一覧画面”">「出荷指示 一覧画面」を共有</span><span class="sub">✕</span></div>
+          <div class="mb">
+            <div class="row" style="justify-content:space-between"><span data-i="开启分享链接|Share link on">共有リンクを有効にする</span><span class="switch" aria-hidden="true"></span></div>
+            <div class="field"><label data-i="链接（不需要登录）|Link (no login needed)">リンク（ログイン不要）</label>
+              <div class="input"><span class="mono">https://pm.example.com/share/m/Kq8v2LwT9xNc4hRz</span><button class="btn sm" type="button" data-i="复制|Copy">コピー</button></div></div>
+            <div class="field"><label data-i="有效期|Expires">有効期限</label>
+              <div class="seg"><span data-i="7 天|7 days">7日</span><span class="on" data-i="30 天|30 days">30日</span><span data-i="无期限|Never">無期限</span></div>
+              <span class="sub" data-i="至 2026-10-31（周六）。|Until 2026-10-31 (Sat).">2026-10-31（土）まで</span></div>
+            <div class="field"><label data-i="对方看到的版本|Version shown">相手に見せる版</label>
+              <div class="seg"><span class="on" data-i="总是最新|Always latest">常に最新版</span><span data-i="固定为 v2|Pin to v2">v2 に固定</span></div></div>
+            <div class="sub" data-i="已被打开 6 次 · 最近 10/15 09:12|Opened 6 times · last 10/15 09:12">閲覧 6 回 · 最終 10/15 09:12</div>
+          </div>
+          <div class="mf"><button class="btn" type="button" data-i="重新生成链接|Regenerate link">リンクを再発行</button><button class="btn pri" type="button" data-i="完成|Done">完了</button></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- M5 -->
+  <section class="screen" id="m5">
+    <div class="cap">
+      <span class="id">M5</span><h2 data-i="客户看到的分享页|What the client sees">顧客が見る共有ページ</h2>
+      <p data-i="地址栏是自家域名，没有登录页，也没有 PM 的其它信息，只有标题栏和效果图本身。|Our own domain in the address bar, no login, nothing else from PM: just a title bar and the mockup.">アドレスバーは自社ドメイン。ログイン不要で、PM の他の情報は一切出ず、タイトルバーとモックアップだけを表示します。</p>
+      <div class="notes"><span data-i="公开页面 layout:false|Public page, layout:false">公開ページ layout:false</span><span>X-Robots-Tag: noindex</span></div>
+    </div>
+    <div class="win">
+      <div class="bar"><div class="dots"><i></i><i></i><i></i></div><div class="url">pm.example.com/share/m/Kq8v2LwT9xNc4hRz</div></div>
+      <div class="share-top">
+        <div class="brand"><i></i><span>Proyubi</span><span class="sub" style="font-weight:400">· ACME 物流様 · 出荷指示 一覧画面</span></div>
+        <div class="row"><span class="chip c-mute" data-i="版本 2 · 10/14 更新|Version 2 · updated 10/14">版 2 · 10/14 更新</span><span class="sub" data-i="至 10/31 有效|Valid until 10/31">10/31 まで有効</span></div>
+      </div>
+      <div class="stage" style="min-height:360px">
+        <div class="fake">
+          <div class="fh"><span>ACME 物流 · 出荷指示</span><span>山田 花子 ▾</span></div>
+          <div class="fb">
+            <div class="ff"><span>すべて 24</span><span>未出荷 9</span><span>出荷済 13</span><span class="on">保留 2</span></div>
+            <table><thead><tr><th>指示番号</th><th>出荷先</th><th>品目数</th><th>状態</th></tr></thead><tbody>
+              <tr><td>SH-10417</td><td>名古屋DC</td><td class="num">5</td><td><span class="st s2">保留</span></td></tr>
+              <tr><td>SH-10409</td><td>(株)サンプル商事</td><td class="num">1</td><td><span class="st s2">保留</span></td></tr>
+            </tbody></table>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="callout" data-i="链接停用或过期后，这里显示「此链接已失效，请联系负责人」，不暴露任何项目信息。|Once the link is off or expired, this page only says “This link is no longer valid — please contact your representative” and reveals nothing about the project.">リンクが停止・期限切れの場合は「このリンクは無効です。担当者にお問い合わせください」とだけ表示し、案件情報は一切出しません。</div>
+  </section>
+
+  <!-- M6 -->
+  <section class="screen" id="m6">
+    <div class="cap">
+      <span class="id">M6</span><h2 data-i="项目效果图一览 · 编辑与删除|Project mockups · Edit & delete">プロジェクトのモックアップ一覧 · 編集と削除</h2>
+      <p data-i="标题、关联的任务或 Bug 可以直接在这里修改。内容的修改走「在 Claude Code 改完 → 作为新版本发布」。删除可以删单个版本，也可以删整个效果图（同时停用分享链接）。|Title and the linked task/bug are edited here. Content changes go “edit in Claude Code → publish as a new version”. You can delete a single version or the whole mockup (which also turns off its share link).">タイトルと紐付け先（タスク / バグ）はここで変更。中身の修正は「Claude Code で直す → 新しい版として公開」。削除は版単位でも、モックアップ全体（共有リンクも停止）でも可能です。</p>
+    </div>
+    <div class="win">
+      <div class="bar"><div class="dots"><i></i><i></i><i></i></div><div class="url">pm.example.com/projects/8f3k…/mockups</div></div>
+      <div class="app">
+        <nav class="side" aria-label="menu">
+          <div class="logo">Proyubi</div>
+          <a href="#m6"><span data-i="俯瞰|Overview">俯瞰</span></a>
+          <a href="#m6"><span data-i="日历|Calendar">カレンダー</span></a>
+          <a class="on" href="#m6"><span data-i="项目|Projects">プロジェクト</span></a>
+          <a href="#m6"><span data-i="质量管理|Quality">品質管理</span></a>
+          <a href="#m6"><span data-i="资源|Resources">リソース</span></a>
+          <a href="#m6"><span data-i="思维导图|Mind maps">マインドマップ</span></a>
+        </nav>
+        <div class="main">
+          <div class="ph">
+            <h3>在庫連携 API 改修 · <span data-i="效果图|Mockups">モックアップ</span></h3>
+            <div class="row"><button class="btn" type="button" data-i="只看分享中|Shared only">共有中のみ</button><button class="btn pri" type="button" data-i="上传 HTML|Upload HTML">HTML をアップロード</button></div>
+          </div>
+          <div class="card"><div class="tbl"><table>
+            <thead><tr><th data-i="标题|Title">タイトル</th><th data-i="关联|Linked to">紐付け先</th><th data-i="版本|Ver.">版</th><th data-i="分享|Share">共有</th><th data-i="更新|Updated">更新</th><th></th></tr></thead>
+            <tbody>
+              <tr><td>出荷指示 一覧画面</td><td><span class="chip c-pri" data-i="任务|Task">タスク</span> 出荷指示 一覧画面</td><td class="num">v2</td><td><span class="chip c-ok" data-i="分享中|Shared">共有中</span></td><td class="sub">10/14 山田</td><td><div class="row"><button class="btn sm" type="button" data-i="编辑|Edit">編集</button><button class="btn sm" type="button" data-i="删除|Delete">削除</button></div></td></tr>
+              <tr><td>出荷指示 詳細ダイアログ</td><td><span class="chip c-pri" data-i="任务|Task">タスク</span> 出荷指示 一覧画面</td><td class="num">v1</td><td><span class="chip c-mute">—</span></td><td class="sub">10/12 佐藤</td><td><div class="row"><button class="btn sm" type="button" data-i="编辑|Edit">編集</button><button class="btn sm" type="button" data-i="删除|Delete">削除</button></div></td></tr>
+              <tr><td>在庫数ズレ 再現画面</td><td><span class="chip c-bad">Bug</span> #128 在庫数が二重計上</td><td class="num">v3</td><td><span class="chip c-ok" data-i="分享中|Shared">共有中</span></td><td class="sub">10/10 田中</td><td><div class="row"><button class="btn sm" type="button" data-i="编辑|Edit">編集</button><button class="btn sm" type="button" data-i="删除|Delete">削除</button></div></td></tr>
+              <tr><td>ダッシュボード案 A</td><td><span class="chip c-mute" data-i="仅项目|Project only">プロジェクトのみ</span></td><td class="num">v1</td><td><span class="chip c-mute">—</span></td><td class="sub">10/03 山田</td><td><div class="row"><button class="btn sm" type="button" data-i="编辑|Edit">編集</button><button class="btn sm" type="button" data-i="删除|Delete">削除</button></div></td></tr>
+            </tbody></table></div></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <p class="foot" data-i="方案文档（待写）：doc/design/pm-mockup.md · 内容存储：PostgreSQL pm_mockup_version.content|Design doc (to be written): doc/design/pm-mockup.md · Storage: PostgreSQL pm_mockup_version.content">設計文書（作成予定）：doc/design/pm-mockup.md · 保存先：PostgreSQL pm_mockup_version.content</p>
+</div>
+
+<script>
+(function(){
+  var els=[].slice.call(document.querySelectorAll('[data-i]'));
+  els.forEach(function(el){el.dataset.ja=el.textContent;});
+  function apply(l){
+    els.forEach(function(el){
+      var p=el.dataset.i.split('|');
+      el.textContent = l==='ja' ? el.dataset.ja : (l==='zh' ? p[0] : p[1]);
+    });
+    document.documentElement.lang = l==='zh'?'zh-CN':(l==='en'?'en':'ja');
+    [].forEach.call(document.querySelectorAll('.lang button'),function(b){b.setAttribute('aria-pressed',String(b.dataset.l===l));});
+    try{localStorage.setItem('pm-mock-lang',l);}catch(e){}
+  }
+  [].forEach.call(document.querySelectorAll('.lang button'),function(b){b.addEventListener('click',function(){apply(b.dataset.l);});});
+  var saved=null; try{saved=localStorage.getItem('pm-mock-lang');}catch(e){}
+  if(saved==='zh'||saved==='en') apply(saved);
+})();
+</script>
