@@ -48,7 +48,7 @@ public class PmProjectController {
     public R<PmProject> create(@RequestBody @Valid CreateProjectReq req) {
         PmProject project = projectService.create(
             getTenantId(), req.customerId(), req.name(), req.description(),
-            req.status(), req.kind(), req.start(), req.end(), req.monthlyQuotaMinutes());
+            req.status(), req.kind(), req.start(), req.end(), req.monthlyQuotaMinutes(), req.parentId());
         return R.ok(project);
     }
 
@@ -57,7 +57,8 @@ public class PmProjectController {
         PmProject project = projectService.update(
             id, getTenantId(), req.customerId(), req.name(), req.description(),
             req.status(), req.kind(), req.start(), req.end(),
-            Boolean.TRUE.equals(req.clearEnd()), req.monthlyQuotaMinutes());
+            Boolean.TRUE.equals(req.clearEnd()), req.monthlyQuotaMinutes(),
+            req.parentId(), Boolean.TRUE.equals(req.clearParent()));
         return R.ok(project);
     }
 
@@ -67,10 +68,10 @@ public class PmProjectController {
         return R.ok();
     }
 
-    /** 拖动排序：按给定顺序重写同一客户下项目的排序 */
+    /** 拖动排序：按给定顺序重写同一阶层（トップレベル同士 / 同じ親のサブ同士）项目的排序 */
     @PutMapping("/reorder")
     public R<Void> reorder(@RequestBody @Valid ReorderReq req) {
-        projectService.reorder(getTenantId(), req.customerId(), req.orderedIds());
+        projectService.reorder(getTenantId(), req.customerId(), req.orderedIds(), req.parentId());
         return R.ok();
     }
 
@@ -83,20 +84,25 @@ public class PmProjectController {
     }
 
     /**
-     * end は敢えて {@code @NotNull} を外している：kind=ops（運用・保守）は
-     * 終了日未定＝継続中を許すため。kind=project の必須チェックは
-     * {@link ai.proyubi.pm.service.PmProjectService} 側で行う。
+     * start / end は {@code @NotNull} を付けない：start 省略時はサービス側で作成当日を入れ、
+     * end は種別を問わず任意（null＝期限なし。期限超過の判定もしない）。
+     * customerId も {@code @NotNull} を外している：parentId（サブプロジェクト）指定時は親の顧客で
+     * 上書きするため省略可。どちらも無い場合はサービス側で 400。
      */
     public record CreateProjectReq(
-        @NotNull UUID customerId,
+        UUID customerId,
         @NotBlank String name,
         String description,
         String status,
         String kind,
-        @NotNull LocalDate start,
+        /** 開始日。省略時は作成当日 */
+        LocalDate start,
+        /** 終了日。種別を問わず任意（null＝期限なし） */
         LocalDate end,
         /** 月次工数枠（分）。null=未指定、0 以下=枠なしへクリア */
-        Integer monthlyQuotaMinutes
+        Integer monthlyQuotaMinutes,
+        /** 親プロジェクト（サブとして作成）。null=トップレベル */
+        UUID parentId
     ) {
     }
 
@@ -111,13 +117,19 @@ public class PmProjectController {
         /** true=終了日を明示的にクリアする（継続中に戻す）。end=null だけでは「未変更」と区別できないため */
         Boolean clearEnd,
         /** 月次工数枠（分）。null=未変更、0 以下=枠なしへクリア */
-        Integer monthlyQuotaMinutes
+        Integer monthlyQuotaMinutes,
+        /** 親プロジェクトへ付け替え（同じ顧客内のみ）。null=未変更 */
+        UUID parentId,
+        /** true=親から外してトップレベルへ戻す。parentId=null だけでは「未変更」と区別できないため */
+        Boolean clearParent
     ) {
     }
 
     public record ReorderReq(
         @NotNull UUID customerId,
-        @NotNull List<UUID> orderedIds
+        @NotNull List<UUID> orderedIds,
+        /** null=トップレベル同士の並べ替え、指定時=その親のサブ同士の並べ替え */
+        UUID parentId
     ) {
     }
 }

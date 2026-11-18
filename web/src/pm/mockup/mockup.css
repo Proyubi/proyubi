@@ -90,8 +90,26 @@
 }
 
 /* ---------- 全画面プレビュー（M3） ---------- */
+/*
+ * Modal を画面いっぱいに固定する。従来も top と下余白はゼロだったが、
+ * antd の狭幅時の margin:8px auto は残り、高さ 100vh のビューアーが
+ * wrap をはみ出して外側もスクロールしていた。幅も wrap 基準（100%）に揃える。
+ * iframe 内の原稿固有の余白・見出しは、ここでは変更しない。
+ */
+.ant-modal-root.pm-mockup-viewer-root .ant-modal-wrap {
+  overflow: hidden;
+}
+
+.ant-modal-root.pm-mockup-viewer-root .ant-modal {
+  top: 0;
+  max-width: 100%;
+  margin: 0;
+  padding-bottom: 0;
+}
+
 .pm-mockup-viewer {
   height: 100vh;
+  height: 100dvh;
   display: flex;
   flex-direction: column;
 }
@@ -108,13 +126,16 @@
 }
 
 .pm-mockup-vbar-title {
+  flex: 1 1 240px;
   display: flex;
   align-items: center;
   gap: 8px;
   min-width: 0;
 }
 
+/* 長いタイトルは 1 行で省略し、全文はツールチップで出す */
 .pm-mockup-vtitle {
+  min-width: 0;
   max-width: 40vw;
 }
 
@@ -130,6 +151,10 @@
   min-height: 0;
   display: grid;
   grid-template-columns: minmax(0, 1fr) 260px;
+}
+
+.pm-mockup-vbody.is-collapsed {
+  grid-template-columns: minmax(0, 1fr) 36px;
 }
 
 .pm-mockup-stage {
@@ -181,16 +206,77 @@
 }
 
 .pm-mockup-versions {
+  min-width: 0;
+  min-height: 0;
   border-left: 1px solid #f0f0f0;
-  padding: 12px;
+  padding: 0 12px 12px;
   display: flex;
   flex-direction: column;
   gap: 8px;
   overflow-y: auto;
 }
 
+/* 版が多くてスクロールしても見出しと折りたたみボタンは上に残す */
 .pm-mockup-versions-head {
+  flex: none;
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding-top: 12px;
+  background: #fff;
   font-weight: 500;
+}
+
+/* 折りたたみ時の細いレール：全体がクリック領域 */
+.pm-mockup-versions-rail {
+  min-width: 0;
+  min-height: 0;
+  border-left: 1px solid #f0f0f0;
+  display: flex;
+}
+
+.pm-mockup-versions-rail-btn {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 0;
+  border: 0;
+  background: #fff;
+  font: inherit;
+  color: rgba(0, 0, 0, 0.65);
+  cursor: pointer;
+  transition:
+    background 0.15s,
+    color 0.15s;
+}
+
+.pm-mockup-versions-rail-btn:hover,
+.pm-mockup-versions-rail-btn:focus-visible {
+  background: #f0f5ff;
+  color: #2f6bff;
+  outline: none;
+}
+
+.pm-mockup-versions-rail-label {
+  writing-mode: vertical-rl;
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+.pm-mockup-versions-rail-count {
+  min-width: 20px;
+  padding: 0 6px;
+  border-radius: 10px;
+  background: #f0f0f0;
+  font-size: 12px;
+  line-height: 20px;
+  text-align: center;
 }
 
 .pm-mockup-ver {
@@ -235,14 +321,36 @@
 }
 
 @media (max-width: 820px) {
-  .pm-mockup-vbody {
-    grid-template-columns: 1fr;
+  .pm-mockup-vtitle {
+    max-width: 100%;
+  }
+  .pm-mockup-vbody,
+  .pm-mockup-vbody.is-collapsed {
+    grid-template-columns: minmax(0, 1fr);
     grid-template-rows: minmax(0, 1fr) auto;
   }
   .pm-mockup-versions {
     border-left: 0;
     border-top: 1px solid #f0f0f0;
     max-height: 30vh;
+  }
+  /* 縦積みのときは下端の細い帯にする */
+  .pm-mockup-versions-rail {
+    border-left: 0;
+    border-top: 1px solid #f0f0f0;
+  }
+  .pm-mockup-versions-rail-btn {
+    flex-direction: row;
+    justify-content: center;
+    padding: 6px 12px;
+  }
+  /* 矢印も上下向きに（開く＝上、たたむ＝下） */
+  .pm-mockup-versions-rail-btn .anticon,
+  .pm-mockup-versions-head .anticon {
+    transform: rotate(90deg);
+  }
+  .pm-mockup-versions-rail-label {
+    writing-mode: horizontal-tb;
   }
 }
 

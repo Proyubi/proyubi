@@ -30,6 +30,12 @@ public class PmProject {
     /** 所属团队ID（多团队隔离；从所属客户继承，customer 变更时同步） */
     private UUID teamId;
 
+    /**
+     * 親プロジェクトID（サブプロジェクトのみ）：null=トップレベル。
+     * 1 階層のみ——親は必ず parent_id=null。customerId / teamId は親に揃える（サーバー側で上書き）。
+     */
+    private UUID parentId;
+
     /** 项目/版本名 */
     private String name;
 
@@ -40,7 +46,7 @@ public class PmProject {
 
     /**
      * 项目种别：project=通常项目（固定范围，进度=任务加权汇总）/ ops=运维保守（范围滚动，按件数看）。
-     * ops 型允许 {@link #end} 为 null（＝継続中），且列表页不显示进度条。
+     * ops 型列表页不显示进度条。{@link #end} 种别不限都可为 null（＝期限なし）。
      */
     private String kind;
 
@@ -48,7 +54,7 @@ public class PmProject {
     @Column("start_date")
     private LocalDate start;
 
-    /** 计划结束日（ISO date）；null=継続中（仅 kind=ops 允许） */
+    /** 计划结束日（ISO date）；null=期限なし（种别不限，不判定期限超过） */
     @Column("end_date")
     private LocalDate end;
 
@@ -118,4 +124,16 @@ public class PmProject {
      */
     @Column(ignore = true)
     private Long monthPlannedMinutes;
+
+    /**
+     * 親進捗の加重に使う重み（分钟）：非持久化。サブプロジェクトの行にだけ詰める。
+     * ＝予定工数合計（{@link #plannedTotalMinutes}）、タスクが無ければ期間の営業日数ぶん
+     * （{@link ai.proyubi.pm.service.TaskRollupService#subProjectWeight}）。一覧の「工数 N日」表示用。
+     */
+    @Column(ignore = true)
+    private Long rollupWeightMinutes;
+
+    /** Response-only: any actual task has started, including tasks in subprojects. */
+    @Column(ignore = true)
+    private Boolean hasStartedWork;
 }

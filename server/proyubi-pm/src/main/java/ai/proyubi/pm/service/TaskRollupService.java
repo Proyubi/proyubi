@@ -240,6 +240,62 @@ public class TaskRollupService {
         return totalDur > 0 ? (int) Math.round((double) weighted / totalDur) : 0;
     }
 
+    /** 親進捗の集計単位：重み（分钟）と進捗（0-100）。 */
+    public record WeightedProgress(long weightMinutes, int progress) {
+    }
+
+    /**
+     * サブプロジェクトの重み（分钟）＝親進捗の加重に使う「工数」。
+     * <ol>
+     *   <li>タスクがあれば予定工数の合計（{@link #projectEffortTotals}.planned＝営業日/祝日カレンダー基準）</li>
+     *   <li>タスクが無ければ、サブの期間 start..end の営業日数 × hoursPerDay</li>
+     *   <li>end が null（継続中；v1 ではサブは ops 不可なので通常は起きない）なら start の 1 日分だけで数える</li>
+     * </ol>
+     * どれでも 0 になる場合（期間が全部休日など）は呼び出し側で 1 分の下駄を履かせる（タスク加重と同じ兜底）。
+     */
+    public long subProjectWeight(LocalDate start, LocalDate end, List<PmTask> subTasks,
+                                 Set<LocalDate> holidays, double hoursPerDay) {
+        if (subTasks != null && !subTasks.isEmpty()) {
+            return projectEffortTotals(subTasks, holidays, hoursPerDay).planned();
+        }
+        LocalDate e = end != null ? end : start;
+        return Math.round(workingDays(start, e, holidays) * hoursPerDay * 60);
+    }
+
+    /**
+     * 親プロジェクトの進捗 = Σ(サブの重み × サブ進捗) + Σ(親直下の根タスクの工期 × 進捗) / Σ重み。
+     * <p>
+     * 親直下タスクの重みは {@link #projectProgress} と同じ（rollup 後の根タスク {@link #effortOf}、0 は 1 に兜底）。
+     * サブの重みは {@link #subProjectWeight}（0 は 1 に兜底）。単位はどちらも分钟なので混ぜて加重できる。
+     * サブが無ければ {@link #projectProgress} と一致する。全体の重みが 0 なら 0。
+     */
+    public int parentProgress(List<PmTask> ownTasks, List<WeightedProgress> subs,
+                              Set<LocalDate> holidays, double hoursPerDay) {
+        long totalDur = 0;
+        long weighted = 0;
+        if (ownTasks != null && !ownTasks.isEmpty()) {
+            rollup(ownTasks, holidays, hoursPerDay);
+            for (PmTask t : ownTasks) {
+                if (t.getParentId() != null) {
+                    continue;
+                }
+                long dur = Math.max(effortOf(t, holidays, hoursPerDay), 1);
+                int progress = t.getProgress() != null ? t.getProgress() : 0;
+                totalDur += dur;
+                weighted += dur * progress;
+            }
+        }
+        if (subs != null) {
+            for (WeightedProgress s : subs) {
+                long w = Math.max(s.weightMinutes(), 1);
+                int progress = Math.max(0, Math.min(100, s.progress()));
+                totalDur += w;
+                weighted += w * progress;
+            }
+        }
+        return totalDur > 0 ? (int) Math.round((double) weighted / totalDur) : 0;
+    }
+
     /** 项目総工期（分钟）合计：予定/実績 各自累计。列表页/甘特 footer「総工期 予定/実績」展示用。 */
     public record EffortTotals(long planned, long actual) {
     }

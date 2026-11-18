@@ -141,7 +141,8 @@ public class PmInternalController {
                 p.getId(),
                 p.getName(),
                 p.getCustomerId(),
-                customerNames.get(p.getCustomerId())
+                customerNames.get(p.getCustomerId()),
+                p.getParentId()
             ));
         }
         return R.ok(result);
@@ -350,7 +351,9 @@ public class PmInternalController {
         UUID id,
         String name,
         UUID customerId,
-        String customerName
+        String customerName,
+        /** 親プロジェクト（サブプロジェクトのみ）；null=トップレベル */
+        UUID parentId
     ) {
     }
 

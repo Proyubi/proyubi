@@ -32,7 +32,6 @@ export default {
   'mockup.page.sharedOnly': '共有中のみ',
   'mockup.page.upload': 'HTML / zip をアップロード',
   'mockup.page.entry': 'モックアップ一覧',
-  'mockup.page.entryButton': 'モックアップ ({n})',
   'mockup.upload.title': 'モックアップを公開',
   'mockup.upload.newVersion': '新しい版をアップロード',
   'mockup.upload.publish': '公開',
@@ -59,6 +58,8 @@ export default {
     '読み込みに時間がかかっています。しばらくお待ちください。',
   'mockup.version.files': '{n} ファイル',
   'mockup.version.title': '版',
+  'mockup.version.collapse': '版パネルを折りたたむ',
+  'mockup.version.expand': '版パネルを開く',
   'mockup.version.deleteConfirm': 'v{v} を削除しますか？',
   'mockup.version.deleteHint':
     '現行版を削除すると、残りの最新版が現行版になります。',

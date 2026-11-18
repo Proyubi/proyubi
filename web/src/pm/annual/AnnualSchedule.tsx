@@ -1,12 +1,9 @@
+import { PROJECT_DISPLAY_STATUS_META, projectDisplayStatus, type ProjectDisplayStatus } from "../utils/projectStatus";
 import { LeftOutlined, PlusOutlined, RightOutlined } from "@ant-design/icons";
 import { useIntl } from "@umijs/max";
 import { Button, DatePicker, Empty, Tag } from "antd";
 import { useMemo, useState } from "react";
-import {
-  PROJECT_STATUS_META,
-  type Project,
-  type ProjectStatus,
-} from "../types";
+import type { Project } from "../types";
 import dayjs, { fmt } from "../utils/date";
 import "./annual.css";
 
@@ -27,7 +24,8 @@ const LABEL_W = 220; // 左侧版本名列宽
 const ROW_H = 40;
 
 /** 版本状态 → 色块底色（与列表页进度条/状态语义一致） */
-const STATUS_COLOR: Record<ProjectStatus, string> = {
+const STATUS_COLOR: Record<ProjectDisplayStatus, string> = {
+  ready: "#08979c",
   planned: "#9aa4b2",
   active: "#2f6bff",
   done: "#52c41a",
@@ -64,16 +62,29 @@ export default function AnnualSchedule({
   // 与本年度有交集的版本，按开始日排序
   // 終了日なし（運用型＝継続中）は「年度末まで伸びて右へ続く」帯として扱う。
   // ここで落とすと運用プロジェクトが年度スケジュールから消えてしまうため。
+  // サブプロジェクトは親の直後にまとめて並べ、ラベルを字下げする（親が今年度に無ければ単独で並ぶ）
   const rows = useMemo(() => {
-    return projects
+    const byStart = (a: Project, b: Project) =>
+      a.start.localeCompare(b.start) || a.name.localeCompare(b.name);
+    const visible = projects
       .filter(
         (p) =>
           p.start && p.start <= yearEnd && (!p.end || p.end >= yearStart)
       )
       .slice()
-      .sort(
-        (a, b) => a.start.localeCompare(b.start) || a.name.localeCompare(b.name)
-      )
+      .sort(byStart);
+    const visibleIds = new Set(visible.map((p) => p.id));
+    const isSubOfVisible = (p: Project) =>
+      !!p.parentId && visibleIds.has(p.parentId);
+    const ordered: Project[] = [];
+    for (const p of visible) {
+      if (isSubOfVisible(p)) continue;
+      ordered.push(p);
+      for (const c of visible) {
+        if (c.parentId === p.id) ordered.push(c);
+      }
+    }
+    return ordered
       .map((p) => {
         const ongoing = !p.end;
         const effEnd = p.end ?? yearEnd;
@@ -84,6 +95,7 @@ export default function AnnualSchedule({
         const width = Math.max(right - left, 8);
         return {
           p,
+          isSub: isSubOfVisible(p),
           left,
           width,
           continuesLeft: p.start < yearStart,
@@ -178,14 +190,15 @@ export default function AnnualSchedule({
               {rows.map(
                 ({
                   p,
+                  isSub,
                   left,
                   width,
                   continuesLeft,
                   continuesRight,
                   releaseX,
                 }) => {
-                  const meta = PROJECT_STATUS_META[p.status];
-                  const color = STATUS_COLOR[p.status];
+                  const meta = PROJECT_DISPLAY_STATUS_META[projectDisplayStatus(p)];
+                  const color = STATUS_COLOR[projectDisplayStatus(p)];
                   const isOps = p.kind === "ops";
                   return (
                     <div
@@ -194,8 +207,16 @@ export default function AnnualSchedule({
                       style={{ height: ROW_H }}
                     >
                       {/* 左：版本名 + 状态 + 周期 */}
-                      <div className="an-label" style={{ width: LABEL_W }}>
+                      <div
+                        className={`an-label${isSub ? " is-sub" : ""}`}
+                        style={{ width: LABEL_W }}
+                      >
                         <div className="an-label-main">
+                          {isSub && (
+                            <span className="an-sub-tag">
+                              {t("projects.sub.tag")}
+                            </span>
+                          )}
                           <a
                             className="an-ver"
                             onClick={() => onOpenProject(p.id)}

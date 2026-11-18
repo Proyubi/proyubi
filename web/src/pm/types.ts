@@ -137,6 +137,18 @@ export interface Project {
   sortOrder?: number;
   /** 归属团队（从所属客户继承） */
   teamId?: string;
+  /**
+   * 親プロジェクト id（サブプロジェクトのみ）。null/未設定＝トップレベル。1 階層のみ。
+   * 子の一覧は後端の childCount ではなく、前端が一覧の parentId から導出する（`pm/utils/projectTree.ts`）。
+   */
+  parentId?: string | null;
+  /**
+   * 親進捗の加重に使う重み（分）：サブの行だけ後端が詰める（非永続）。
+   * ＝予定工数合計、タスクが無ければ期間の営業日数ぶん。一覧の「工数 N日」表示用。
+   */
+  rollupWeightMinutes?: number | null;
+  /** Response-only activity across this project and its subprojects, even at 0%. */
+  hasStartedWork?: boolean | null;
   // ===== 以下は kind='ops' のときだけ後端が詰める運用指標（非永続・レスポンス時集計） =====
   /** 未完了の葉タスク件数（全期間）＝滞留件数 */
   openTaskCount?: number | null;
@@ -387,9 +399,16 @@ export interface OverviewProjectHealth {
   status: ProjectStatus;
   start: string | null;
   end: string | null;
+  /** 親はサブ込みのロールアップ進捗 */
   progress: number;
+  /** 遅延タスク数（親はサブ分も合算） */
   delay: number;
+  /** 期限超過（親は自身またはいずれかのサブが超過） */
   overdue: boolean;
+  /** サブプロジェクト件数（0=サブなし）。トップレベル案件のみが行になる */
+  subCount: number;
+  /** 期限超過のサブ件数 */
+  subOverdueCount: number;
 }
 
 /** 近期里程碑 */

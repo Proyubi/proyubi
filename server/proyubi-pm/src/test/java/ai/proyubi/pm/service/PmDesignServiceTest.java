@@ -102,7 +102,7 @@ class PmDesignServiceTest {
         taskA = task(projectA);
         taskB = task(projectB);
 
-        PmProjectService projectService = new PmProjectService(null, null, null, null, null, null, null, null, null) {
+        PmProjectService projectService = new PmProjectService(null, null, null, null, null, null, null, null, null, null) {
             @Override
             public PmProject getByIdAndTenant(UUID id, UUID tenantId) {
                 PmProject p = projects.get(id);
@@ -112,7 +112,7 @@ class PmDesignServiceTest {
                 return p;
             }
         };
-        PmTaskService taskService = new PmTaskService(null, null, null, null, null, null, null, null, null, null) {
+        PmTaskService taskService = new PmTaskService(null, null, null, null, null, null, null, null, null, null, null) {
             @Override
             public PmTask getVisibleTask(UUID id, UUID tenantId) {
                 PmTask t = tasks.get(id);

@@ -26,6 +26,8 @@ export interface PmProject {
   name: string;
   customerId?: string;
   customerName?: string;
+  /** 親プロジェクト id（サブプロジェクトのみ）。null = トップレベル */
+  parentId?: string | null;
 }
 
 export interface PmCustomer {
@@ -978,7 +980,8 @@ export function buildServer(
     {
       title: "List PM projects",
       description:
-        "List projects from the PM system, optionally filtered by a fuzzy name query. Use it to resolve a project name to its id.",
+        "List projects from the PM system, optionally filtered by a fuzzy name query. Use it to resolve a project name to its id. " +
+        "Sub-projects (サブプロジェクト, one level only) carry parentId = their parent project's id; top-level projects have parentId null.",
       inputSchema: listProjectsShape,
     },
     async ({ query }) => {

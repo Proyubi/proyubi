@@ -108,7 +108,7 @@ public record PmOverviewVO(
     ) {
     }
 
-    /** 项目健康（按案件聚合遅延数） */
+    /** 项目健康（按案件聚合遅延数）。トップレベル案件のみ；サブは親の行に集約 */
     public record ProjectHealth(
         String projectId,
         String name,
@@ -116,11 +116,16 @@ public record PmOverviewVO(
         String status,
         String start,
         String end,
+        /** 進捗（親はサブ込みのロールアップ値） */
         int progress,
-        /** 该项目的遅延任务数（overdue + behind） */
+        /** 该项目的遅延任务数（overdue + behind）；親はサブ分も合算 */
         int delay,
-        /** 项目计划期已过且未交付 */
-        boolean overdue
+        /** 项目计划期已过且未交付；親は自身またはいずれかのサブが期限超過 */
+        boolean overdue,
+        /** サブプロジェクト件数（削除済み除く）。0=サブなし */
+        int subCount,
+        /** 期限超過のサブプロジェクト件数 */
+        int subOverdueCount
     ) {
     }
 

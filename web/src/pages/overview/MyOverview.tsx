@@ -261,6 +261,20 @@ export default function MyOverview({ data, loading }: Props) {
                   >
                     <div className="ov-hrow-main">
                       <span className="ov-hname">{p.name}</span>
+                      {p.subCount > 0 && (
+                        <span
+                          className={`ov-hsub${p.subOverdueCount > 0 ? " is-red" : ""}`}
+                          title={
+                            p.subOverdueCount > 0
+                              ? t("overview.health.subOverdue", {
+                                  n: p.subOverdueCount,
+                                })
+                              : undefined
+                          }
+                        >
+                          {t("overview.health.subBadge", { n: p.subCount })}
+                        </span>
+                      )}
                       {p.delay > 0 && (
                         <Tag color="error" variant="filled">
                           {t("overview.health.delayBadge", { n: p.delay })}

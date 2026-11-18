@@ -22,8 +22,12 @@ import {
   Tabs,
   Tag,
 } from "antd";
+import {
+  PROJECT_DISPLAY_STATUS_META,
+  projectDisplayStatus,
+} from "@/pm/utils/projectStatus";
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { listMockups, listProjectDocs } from "@/pm/api";
+import { listProjectDocs } from "@/pm/api";
 import BoardView from "@/pm/board/BoardView";
 import DesignBoardTab from "@/pm/design/DesignBoardTab";
 import ProjectDocsPanel from "@/pm/docs/ProjectDocsPanel";
@@ -33,7 +37,7 @@ import TaskFormModal, { type TaskFormValue } from "@/pm/gantt/TaskFormModal";
 import RoadmapView from "@/pm/roadmap/RoadmapView";
 import RoadmapOptionManager from "@/pm/roadmap/RoadmapOptionManager";
 import { useData, useProjectProgress } from "@/pm/store";
-import { type PmDoc, PROJECT_STATUS_META, type Task } from "@/pm/types";
+import type { PmDoc, Task } from "@/pm/types";
 import { fmt, ISO } from "@/pm/utils/date";
 import { matchTasks } from "@/pm/utils/filter";
 import "./gantt.css";
@@ -81,6 +85,10 @@ export default function GanttPage() {
   }, [focusTaskId]);
 
   const project = projects.find((p) => p.id === projectId);
+  // サブプロジェクトなら親（パンくずに「親：xxx」を出す）
+  const parentProject = project?.parentId
+    ? projects.find((p) => p.id === project.parentId)
+    : undefined;
   const tasks = tasksOf(projectId);
   const deps = depsOf(projectId);
   const progress = useProjectProgress(projectId);
@@ -138,19 +146,6 @@ export default function GanttPage() {
     if (!formOpen && editing) reloadDocs();
   }, [formOpen]);
   const docCount = useMemo(() => docs.filter((d) => !d.isRoot).length, [docs]);
-  // モックアップ件数（ボタン表示用）。一覧ページと同じ projectId スコープ（タスク・バグ配下も含む）
-  const [mockupCount, setMockupCount] = useState(0);
-  useEffect(() => {
-    setMockupCount(0);
-    if (!projectId) return;
-    let alive = true;
-    listMockups({ projectId })
-      .then((list) => alive && setMockupCount(list.length))
-      .catch(() => {});
-    return () => {
-      alive = false;
-    };
-  }, [projectId]);
   const openDocs = () => {
     setDocsOpen(true);
     // タスク編集ドロワー側で紐付けが変わっている可能性があるので開くたびに取り直す
@@ -185,7 +180,7 @@ export default function GanttPage() {
       />
     );
   }
-  const meta = PROJECT_STATUS_META[project.status];
+  const meta = PROJECT_DISPLAY_STATUS_META[projectDisplayStatus(project, progress)];
   const customerName = customerMap[project.customerId]?.name;
 
   const openCreateRoot = () => {
@@ -355,6 +350,24 @@ export default function GanttPage() {
                     },
                   ]
                 : []),
+              // サブプロジェクト：親を 1 段挟む（「親：xxx」→ 親のガントへ）
+              ...(parentProject
+                ? [
+                    {
+                      title: (
+                        <a
+                          onClick={() =>
+                            nav(`/projects/${parentProject.id}/gantt`)
+                          }
+                        >
+                          {t("projects.sub.parentCrumb", {
+                            name: parentProject.name,
+                          })}
+                        </a>
+                      ),
+                    },
+                  ]
+                : []),
             ]}
           />
         </div>
@@ -393,12 +406,13 @@ export default function GanttPage() {
               <Button icon={<FolderOpenOutlined />} onClick={openDocs}>
                 {t("docs.projectButton", { n: docCount })}
               </Button>
+              {/* モックアップ一覧（M6）。1280px でツールバーが折り返さないようアイコンのみ */}
               <Button
                 icon={<LayoutOutlined />}
+                title={t("mockup.page.entry")}
+                aria-label={t("mockup.page.entry")}
                 onClick={() => nav(`/projects/${projectId}/mockups`)}
-              >
-                {t("mockup.page.entryButton", { n: mockupCount })}
-              </Button>
+              />
               {tab === "gantt" && (
                 <>
                   <Segmented
@@ -409,7 +423,7 @@ export default function GanttPage() {
                       { value: "week", label: t("projects.gantt.scale.week") },
                     ]}
                   />
-                  {/* アイコンのみ。「すべて展開／折りたたむ」は title（ネイティブ tooltip）で補う */}
+                  {/* ラベルは短縮形。「すべて」に効くことは title（ネイティブ tooltip）で補う */}
                   <Button
                     icon={
                       collapsedCount > 0 ? (
@@ -423,17 +437,23 @@ export default function GanttPage() {
                         ? t("projects.gantt.expandAll")
                         : t("projects.gantt.collapseAll")
                     }
-                    aria-label={
-                      collapsedCount > 0
-                        ? t("projects.gantt.expandAll")
-                        : t("projects.gantt.collapseAll")
-                    }
                     onClick={() =>
                       setCollapsedAll(projectId, collapsedCount === 0)
                     }
-                  />
+                  >
+                    {collapsedCount > 0
+                      ? t("projects.gantt.expandAllShort")
+                      : t("projects.gantt.collapseAllShort")}
+                  </Button>
                 </>
               )}
+              <Button
+                type="primary"
+                icon={<PlusOutlined />}
+                onClick={openCreateRoot}
+              >
+                {t("projects.gantt.addTask")}
+              </Button>
             </div>
           )}
           {tab === "design" && (
@@ -443,10 +463,10 @@ export default function GanttPage() {
               </Button>
               <Button
                 icon={<LayoutOutlined />}
+                title={t("mockup.page.entry")}
+                aria-label={t("mockup.page.entry")}
                 onClick={() => nav(`/projects/${projectId}/mockups`)}
-              >
-                {t("mockup.page.entryButton", { n: mockupCount })}
-              </Button>
+              />
             </div>
           )}
           {tab === "roadmap" && (
@@ -454,12 +474,13 @@ export default function GanttPage() {
               <Button icon={<FolderOpenOutlined />} onClick={openDocs}>
                 {t("docs.projectButton", { n: docCount })}
               </Button>
+              {/* モックアップ一覧（M6）。1280px でツールバーが折り返さないようアイコンのみ */}
               <Button
                 icon={<LayoutOutlined />}
+                title={t("mockup.page.entry")}
+                aria-label={t("mockup.page.entry")}
                 onClick={() => nav(`/projects/${projectId}/mockups`)}
-              >
-                {t("mockup.page.entryButton", { n: mockupCount })}
-              </Button>
+              />
               <Button
                 icon={<TagsOutlined />}
                 onClick={() => setOptionMgrOpen(true)}
@@ -472,8 +493,7 @@ export default function GanttPage() {
         {/* 絞り込みはツールバー（gp-actions）ではなくタブ行の右端に置く。
             gp-header-main は flex-wrap:wrap なので、日/週・折りたたむ・追加 の隣に足すと
             1280px 幅で行が折り返し、height:calc(100vh - 32px) 固定のガントが 1 行分縮む。
-            タブ行の右側は元々空いており、「今のタブの中身を絞る」という意味とも一致する。
-            「タスク追加」も同じく今のタブ（WBS / ボード）に対する操作なので絞り込みの隣に置く。 */}
+            タブ行の右側は元々空いており、「今のタブの中身を絞る」という意味とも一致する。 */}
         <Tabs
           activeKey={tab}
           onChange={(k) => setTab(k as ViewTab)}
@@ -500,13 +520,6 @@ export default function GanttPage() {
                     })}
                   </span>
                 )}
-                <Button
-                  type="primary"
-                  icon={<PlusOutlined />}
-                  onClick={openCreateRoot}
-                >
-                  {t("projects.gantt.addTask")}
-                </Button>
               </div>
             ) : null
           }

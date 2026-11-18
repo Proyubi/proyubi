@@ -39,13 +39,15 @@ public class PmTaskService {
     private final PmCascadeService cascadeService;
     private final PmSettingService settingService;
     private final PmTaskActivityService activityService;
+    private final PmProjectProgressService progressService;
 
     public PmTaskService(PmTaskMapper taskMapper, PmDependencyMapper dependencyMapper,
                          PmProjectMapper projectMapper, TaskRollupService rollupService,
                          PmRoadmapOptionService roadmapOptionService,
                          PmHolidayService holidayService, PmTeamScopeService teamScope,
                          PmCascadeService cascadeService, PmSettingService settingService,
-                         PmTaskActivityService activityService) {
+                         PmTaskActivityService activityService, PmProjectProgressService progressService) {
+        this.progressService = progressService;
         this.taskMapper = taskMapper;
         this.dependencyMapper = dependencyMapper;
         this.projectMapper = projectMapper;
@@ -90,13 +92,16 @@ public class PmTaskService {
         // ——例如改了假日日历、或历史上经某条绕过 recomputeProjectProgress 的路径完成了任务——
         // 列表页会长期显示陈旧进度。这里在打开甘特（已加载全树）时顺带订正：仅在不一致时回写，
         // 且不触碰 updated_at（这是订正而非用户编辑）。
-        int live = rollupService.projectProgress(tasks, holidays, hoursPerDay);
+        // サブを持つ親は「サブ＋親直下タスク」の加重集計が正（自分のタスクだけで上書きしない）。
+        int live = progressService.liveProgressWithOwnTasks(tenantId, project, tasks, holidays, hoursPerDay);
         int cached = project.getProgress() != null ? project.getProgress() : 0;
         if (live != cached) {
             UpdateChain.of(PmProject.class)
                 .set(PmProject::getProgress, live)
                 .where(PmProject::getId).eq(projectId)
                 .update();
+            // サブの値が直ったなら親の集計も追従させる
+            progressService.recomputeParent(tenantId, project.getParentId());
         }
         return tasks;
     }
@@ -586,17 +591,13 @@ public class PmTaskService {
         return Math.max(0, Math.min(100, progress));
     }
 
-    /** 重新计算并回写项目整体进度（由任务汇总） */
+    /**
+     * 重新计算并回写项目整体进度（由任务汇总）。
+     * サブを持つ親は「サブ＋親直下タスク」の加重集計、サブなら自分を書いたあと親も再計算する
+     * （{@link PmProjectProgressService#recompute}）。
+     */
     @Transactional
     public void recomputeProjectProgress(UUID tenantId, UUID projectId) {
-        PmProject project = projectMapper.selectOneById(projectId);
-        if (project == null || !project.getTenantId().equals(tenantId) || project.getDeletedAt() != null) {
-            return;
-        }
-        List<PmTask> tasks = new ArrayList<>(rawList(tenantId, projectId));
-        project.setProgress(rollupService.projectProgress(tasks,
-            holidayService.getHolidayDates(tenantId), settingService.getHoursPerWorkday(tenantId)));
-        project.setUpdatedAt(LocalDateTime.now());
-        projectMapper.update(project);
+        progressService.recompute(tenantId, projectId);
     }
 }

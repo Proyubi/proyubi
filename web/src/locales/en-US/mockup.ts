@@ -33,7 +33,6 @@ export default {
   'mockup.page.sharedOnly': 'Shared only',
   'mockup.page.upload': 'Upload HTML / zip',
   'mockup.page.entry': 'Mockups',
-  'mockup.page.entryButton': 'Mockups ({n})',
   'mockup.upload.title': 'Publish mockup',
   'mockup.upload.newVersion': 'Upload a new version',
   'mockup.upload.publish': 'Publish',
@@ -59,6 +58,8 @@ export default {
     'This is taking longer than usual. Please wait a moment.',
   'mockup.version.files': '{n} files',
   'mockup.version.title': 'Versions',
+  'mockup.version.collapse': 'Collapse versions panel',
+  'mockup.version.expand': 'Expand versions panel',
   'mockup.version.deleteConfirm': 'Delete v{v}?',
   'mockup.version.deleteHint':
     'If you delete the current version, the latest remaining one becomes current.',

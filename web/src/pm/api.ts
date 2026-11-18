@@ -161,6 +161,11 @@ export interface CreateProjectPayload {
   end?: string | null;
   /** 月次工数枠（分）。0 以下を送ると「枠なし」に戻る */
   monthlyQuotaMinutes?: number | null;
+  /**
+   * 親プロジェクト（サブプロジェクトとして作成 / 編集で付け替え）。
+   * 後端が customerId / teamId を親で上書きし、kind は親（通常）を継承する。
+   */
+  parentId?: string | null;
 }
 export type UpdateProjectPayload = Partial<CreateProjectPayload> & {
   /**
@@ -168,6 +173,8 @@ export type UpdateProjectPayload = Partial<CreateProjectPayload> & {
    * PATCH セマンティクスでは end:null は「未変更」と区別できないため専用フラグが要る。
    */
   clearEnd?: boolean;
+  /** true=親から外してトップレベルへ戻す（parentId 省略は「未変更」） */
+  clearParent?: boolean;
 };
 
 export function listProjects(params?: {
@@ -198,11 +205,18 @@ export function deleteProject(id: string) {
   return request<void>(`${PM}/projects/${id}`, { method: "DELETE" });
 }
 
-/** 拖动排序：按给定顺序持久化同一客户下项目的排序（orderedIds 为该客户全部项目 id） */
-export function reorderProjects(customerId: string, orderedIds: string[]) {
+/**
+ * 拖动排序：按给定顺序持久化同一阶层的项目排序。
+ * parentId 省略＝该客户的トップレベル同士、指定＝その親のサブ同士（後端は他階層の id を無視する）。
+ */
+export function reorderProjects(
+  customerId: string,
+  orderedIds: string[],
+  parentId?: string | null
+) {
   return request<void>(`${PM}/projects/reorder`, {
     method: "PUT",
-    data: { customerId, orderedIds },
+    data: { customerId, orderedIds, parentId: parentId ?? undefined },
   });
 }
 

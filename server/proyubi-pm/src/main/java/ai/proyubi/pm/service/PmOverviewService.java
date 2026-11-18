@@ -22,11 +22,13 @@ import java.time.LocalDate;
 import java.time.temporal.ChronoUnit;
 import java.time.temporal.TemporalAdjusters;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.UUID;
 
@@ -229,44 +231,19 @@ public class PmOverviewService {
             .comparingInt(PmOverviewVO.RiskItem::overdueDays).reversed()
             .thenComparing(ri -> ri.end() != null ? ri.end() : "9999-12-31"));
 
-        // 项目健康
-        List<PmProject> healthProjects = new ArrayList<>();
+        // 项目健康（候補を選び、トップレベル単位に集約）
+        List<UUID> healthSeedIds = new ArrayList<>();
         if (meScope) {
-            for (UUID pid : myProjectIds) {
-                PmProject p = projectMap.get(pid);
-                if (p != null) {
-                    healthProjects.add(p);
-                }
-            }
+            healthSeedIds.addAll(myProjectIds);
         } else {
             for (PmProject p : projectMap.values()) {
                 if ("active".equals(p.getStatus()) || delayByProject.containsKey(p.getId())) {
-                    healthProjects.add(p);
+                    healthSeedIds.add(p.getId());
                 }
             }
         }
-        List<PmOverviewVO.ProjectHealth> projectHealth = new ArrayList<>();
-        for (PmProject p : healthProjects) {
-            PmCustomer customer = p.getCustomerId() != null ? customerMap.get(p.getCustomerId()) : null;
-            int delay = delayByProject.getOrDefault(p.getId(), 0);
-            boolean overdue = !"done".equals(p.getStatus())
-                && (p.getProgress() == null || p.getProgress() < 100)
-                && p.getEnd() != null && p.getEnd().isBefore(today);
-            projectHealth.add(new PmOverviewVO.ProjectHealth(
-                p.getId().toString(),
-                p.getName(),
-                customer != null ? customer.getName() : null,
-                p.getStatus(),
-                p.getStart() != null ? p.getStart().toString() : null,
-                p.getEnd() != null ? p.getEnd().toString() : null,
-                p.getProgress() != null ? p.getProgress() : 0,
-                delay,
-                overdue
-            ));
-        }
-        projectHealth.sort(Comparator
-            .comparingInt(PmOverviewVO.ProjectHealth::delay).reversed()
-            .thenComparingInt(PmOverviewVO.ProjectHealth::progress));
+        List<PmOverviewVO.ProjectHealth> projectHealth =
+            buildProjectHealth(healthSeedIds, projectMap, customerMap, delayByProject, today);
 
         // 近期里程碑（未完，14 天内或已超期）
         List<PmOverviewVO.Milestone> milestones = new ArrayList<>();
@@ -302,7 +279,8 @@ public class PmOverviewService {
         } else {
             int n = 0;
             for (PmProject p : projectMap.values()) {
-                if ("active".equals(p.getStatus())) {
+                // サブプロジェクトは親に含めて数える（親＋サブの二重計上を避け、トップレベルのみ）
+                if ("active".equals(p.getStatus()) && p.getParentId() == null) {
                     n++;
                 }
             }
@@ -662,6 +640,76 @@ public class PmOverviewService {
             }
         }
         return new Risk(sorted, overdueDays, daysUntilDue);
+    }
+
+    /** 案件の期限超過：終了日 &lt; 今日・未納品・進捗 &lt; 100（俯瞰全体で同じ口径） */
+    static boolean isProjectOverdue(PmProject p, LocalDate today) {
+        return !"done".equals(p.getStatus())
+            && (p.getProgress() == null || p.getProgress() < 100)
+            && p.getEnd() != null && p.getEnd().isBefore(today);
+    }
+
+    /**
+     * 案件ヘルス一覧：トップレベル案件のみを並べる。
+     * <ul>
+     *   <li>候補（seedIds）にサブが含まれる場合は親の行に寄せる（親が可視範囲外ならサブ自身を行にする）</li>
+     *   <li>進捗は親のキャッシュ値（pm_project.progress＝サブ込みのロールアップ）をそのまま使う</li>
+     *   <li>遅延数は親＋サブの合計。期限超過は親自身 or 削除されていないサブのいずれかが超過</li>
+     * </ul>
+     * projectMap は削除済みを含まない前提（呼び出し側で deleted_at IS NULL 済み）。
+     */
+    static List<PmOverviewVO.ProjectHealth> buildProjectHealth(Collection<UUID> seedIds,
+                                                              Map<UUID, PmProject> projectMap,
+                                                              Map<UUID, PmCustomer> customerMap,
+                                                              Map<UUID, Integer> delayByProject,
+                                                              LocalDate today) {
+        Map<UUID, List<PmProject>> subsByParent = new HashMap<>();
+        for (PmProject p : projectMap.values()) {
+            if (p.getParentId() != null && projectMap.containsKey(p.getParentId())) {
+                subsByParent.computeIfAbsent(p.getParentId(), k -> new ArrayList<>()).add(p);
+            }
+        }
+        Set<UUID> rowIds = new LinkedHashSet<>();
+        for (UUID id : seedIds) {
+            PmProject p = projectMap.get(id);
+            if (p == null) {
+                continue;
+            }
+            UUID parentId = p.getParentId();
+            rowIds.add(parentId != null && projectMap.containsKey(parentId) ? parentId : id);
+        }
+
+        List<PmOverviewVO.ProjectHealth> rows = new ArrayList<>();
+        for (UUID id : rowIds) {
+            PmProject p = projectMap.get(id);
+            List<PmProject> subs = subsByParent.getOrDefault(id, List.of());
+            int delay = delayByProject.getOrDefault(id, 0);
+            int subOverdue = 0;
+            for (PmProject s : subs) {
+                delay += delayByProject.getOrDefault(s.getId(), 0);
+                if (isProjectOverdue(s, today)) {
+                    subOverdue++;
+                }
+            }
+            PmCustomer customer = p.getCustomerId() != null ? customerMap.get(p.getCustomerId()) : null;
+            rows.add(new PmOverviewVO.ProjectHealth(
+                p.getId().toString(),
+                p.getName(),
+                customer != null ? customer.getName() : null,
+                p.getStatus(),
+                p.getStart() != null ? p.getStart().toString() : null,
+                p.getEnd() != null ? p.getEnd().toString() : null,
+                p.getProgress() != null ? p.getProgress() : 0,
+                delay,
+                isProjectOverdue(p, today) || subOverdue > 0,
+                subs.size(),
+                subOverdue
+            ));
+        }
+        rows.sort(Comparator
+            .comparingInt(PmOverviewVO.ProjectHealth::delay).reversed()
+            .thenComparingInt(PmOverviewVO.ProjectHealth::progress));
+        return rows;
     }
 
     /**

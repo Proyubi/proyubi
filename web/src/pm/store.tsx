@@ -1,3 +1,4 @@
+import { hasStartedWork } from "@/pm/utils/projectStatus";
 import {
   createContext,
   type ReactNode,
@@ -14,6 +15,7 @@ import type {
   Holiday,
   Member,
   Project,
+  ProjectStatus,
   RoadmapOption,
   RoadmapOptionKind,
   Task,
@@ -60,15 +62,29 @@ interface DataContextValue {
   setTaskAssignees: (id: string, assigneeIds: string[]) => Promise<void>;
   toggleCollapse: (id: string) => Promise<void>;
   setCollapsedAll: (projectId: string, collapsed: boolean) => Promise<void>;
-  addProject: (p: Omit<Project, "id" | "progress">) => Promise<Project>;
+  /** status は省略可（省略時は後端の既定値 planned） */
+  addProject: (
+    p: Omit<Project, "id" | "progress" | "status"> & { status?: ProjectStatus }
+  ) => Promise<Project>;
   updateProject: (
     id: string,
     /** clearEnd=true で終了日を明示的に null（＝継続中）へ戻す。end:null は「未変更」と区別できないため */
-    patch: Partial<Omit<Project, "id" | "progress">> & { clearEnd?: boolean }
+    patch: Partial<Omit<Project, "id" | "progress">> & {
+      clearEnd?: boolean;
+      /** true=親から外してトップレベルへ戻す（parentId:null は「未変更」と区別できないため） */
+      clearParent?: boolean;
+    }
   ) => Promise<void>;
   deleteProject: (id: string) => Promise<void>;
-  /** 拖动排序：持久化某客户下项目顺序（orderedIds 为该客户全部项目 id） */
-  reorderProjects: (customerId: string, orderedIds: string[]) => Promise<void>;
+  /**
+   * 拖动排序：持久化同一阶层的项目顺序。parentId 省略＝该客户的トップレベル同士、
+   * 指定＝その親のサブ同士（階層をまたぐ並べ替えはしない）。
+   */
+  reorderProjects: (
+    customerId: string,
+    orderedIds: string[],
+    parentId?: string | null
+  ) => Promise<void>;
   addCustomer: (
     name: string,
     shortName?: string,
@@ -202,17 +218,52 @@ export function DataProvider({ children }: { children: ReactNode }) {
     setMembers(ms ?? []);
   }, []);
 
+  /**
+   * プロジェクト一覧を後端から取り直す（親の集計進捗など、後端でしか算出しない値の同期用）。
+   * 背景での同期なので失敗は握りつぶす（エラー toast は request 側で出る）。
+   */
+  const refreshProjects = useCallback(async () => {
+    try {
+      const ps = await api.listProjects();
+      setProjects(ps ?? []);
+    } catch {
+      /* 次回の操作で再同期される */
+    }
+  }, []);
+
+  // サブプロジェクト判定を最新の一覧で行うための参照（コールバックの依存を増やさない）
+  const projectsRef = useRef<Project[]>(projects);
+  projectsRef.current = projects;
+
+  /**
+   * タスク変更後の進捗をキャッシュへ反映する。
+   * - 通常：前端の rollup 値をそのまま入れる（後端と同口径）。
+   * - サブを持つ親：自分のタスクだけの値は誤りなので入れない（後端の集計を取り直す）。
+   * - サブ：自分は即時反映し、親の集計値を後端から取り直す。
+   */
+  const applyProjectProgress = useCallback(
+    (projectId: string, prog: number, tasks: Task[]) => {
+      const list = projectsRef.current;
+      const isParent = list.some((p) => p.parentId === projectId);
+      const isSub = !!list.find((p) => p.id === projectId)?.parentId;
+      if (!isParent) {
+        setProjects((prev) =>
+          prev.map((p) => (p.id === projectId ? { ...p, progress: prog, hasStartedWork: hasStartedWork(tasks) } : p))
+        );
+      }
+      if (isParent || isSub) void refreshProjects();
+    },
+    [refreshProjects]
+  );
+
   /** 重新拉取某项目任务，并把项目列表里的进度同步为最新（与后端 rollup 一致） */
   const refetchTasks = useCallback(
     async (projectId: string) => {
       const tasks = await api.listTasks(projectId);
       setTasksByProject((prev) => ({ ...prev, [projectId]: tasks }));
-      const prog = projectProgress(tasks, holidays);
-      setProjects((prev) =>
-        prev.map((p) => (p.id === projectId ? { ...p, progress: prog } : p))
-      );
+      applyProjectProgress(projectId, projectProgress(tasks, holidays), tasks);
     },
-    [holidays]
+    [holidays, applyProjectProgress]
   );
 
   const loadProject = useCallback(
@@ -226,6 +277,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
           api.listDependencies(projectId),
         ]);
         setTasksByProject((prev) => ({ ...prev, [projectId]: tasks }));
+        applyProjectProgress(projectId, projectProgress(tasks, holidays), tasks);
         setDepsByProject((prev) => ({ ...prev, [projectId]: deps ?? [] }));
         setLoadedProjects((prev) => new Set(prev).add(projectId));
       })().finally(() => {
@@ -234,7 +286,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
       projReq.current.set(projectId, p);
       return p;
     },
-    [loadedProjects]
+    [loadedProjects, holidays, applyProjectProgress]
   );
 
   const value = useMemo<DataContextValue>(() => {
@@ -266,21 +318,38 @@ export function DataProvider({ children }: { children: ReactNode }) {
           start: p.start,
           end: p.end,
           monthlyQuotaMinutes: p.monthlyQuotaMinutes,
+          parentId: p.parentId ?? undefined,
         });
-        setProjects((prev) => [created, ...prev]);
+        if (created.parentId) {
+          // サブ：一覧の末尾（同じ親のサブの最後）に足し、親の集計進捗は後端から取り直す
+          setProjects((prev) => [...prev, created]);
+          void refreshProjects();
+        } else {
+          setProjects((prev) => [created, ...prev]);
+        }
         return created;
       },
 
       updateProject: async (id, patch) => {
+        const before = projects.find((p) => p.id === id);
         const updated = await api.updateProject(id, patch);
         setProjects((prev) =>
-          prev.map((p) => (p.id === id ? { ...p, ...updated } : p))
+          prev.map((p) => (p.id === id ? { ...p, ...updated, hasStartedWork: updated.hasStartedWork ?? p.hasStartedWork } : p))
         );
+        // 親子が絡む更新（付け替え・サブの期間変更・親の顧客変更でサブ追従）は
+        // 後端で並び順 / 親の集計 / サブの顧客が変わるので一覧ごと取り直す
+        const involvesHierarchy =
+          !!before?.parentId ||
+          !!updated.parentId ||
+          projects.some((p) => p.parentId === id);
+        if (involvesHierarchy) void refreshProjects();
       },
 
       deleteProject: async (id) => {
+        const wasSub = !!projects.find((p) => p.id === id)?.parentId;
         await api.deleteProject(id);
         setProjects((prev) => prev.filter((p) => p.id !== id));
+        if (wasSub) void refreshProjects();   // 親の集計進捗が変わる
         setTasksByProject((prev) => {
           const next = { ...prev };
           delete next[id];
@@ -298,12 +367,15 @@ export function DataProvider({ children }: { children: ReactNode }) {
         });
       },
 
-      reorderProjects: async (customerId, orderedIds) => {
+      reorderProjects: async (customerId, orderedIds, parentId) => {
         const snapshot = projects;
-        // 乐观重排：仅调整该客户下项目的相对顺序，其余位置不动
+        // 同じ顧客・同じ親の案件だけを並べ替え、他の階層の順序は維持する。
+        const sameLevel = (p: Project) =>
+          p.customerId === customerId &&
+          (p.parentId ?? null) === (parentId ?? null);
         const pos = new Map(orderedIds.map((id, i) => [id, i] as const));
         const ordered = projects
-          .filter((p) => p.customerId === customerId)
+          .filter(sameLevel)
           .map((p) => ({
             ...p,
             sortOrder: pos.has(p.id) ? (pos.get(p.id) as number) : p.sortOrder,
@@ -315,10 +387,10 @@ export function DataProvider({ children }: { children: ReactNode }) {
           );
         let i = 0;
         setProjects((prev) =>
-          prev.map((p) => (p.customerId === customerId ? ordered[i++] : p))
+          prev.map((p) => (sameLevel(p) ? ordered[i++] : p))
         );
         try {
-          await api.reorderProjects(customerId, orderedIds);
+          await api.reorderProjects(customerId, orderedIds, parentId);
         } catch (e) {
           setProjects(snapshot); // 失败回滚
           throw e;
@@ -514,15 +586,12 @@ export function DataProvider({ children }: { children: ReactNode }) {
           ]);
           setTasksByProject((prev) => ({ ...prev, [pid]: tasks }));
           setDepsByProject((prev) => ({ ...prev, [pid]: deps ?? [] }));
-          const prog = projectProgress(tasks, holidays);
-          setProjects((prev) =>
-            prev.map((p) => (p.id === pid ? { ...p, progress: prog } : p))
-          );
+          applyProjectProgress(pid, projectProgress(tasks, holidays), tasks);
         }
       },
 
       setTaskStatus: async (id, status) => {
-        // 乐观更新业务状态（与 progress/rollup 无关，无需整树 refetch）。
+        // 乐观更新看板状态；成功后同步0%任务的已开始标记及父项目。
         // 仅定位到所属项目并函数式更新/回滚目标任务，避免整 map 快照覆盖误伤
         // await 期间其它项目的并发 refetch。
         let pid: string | undefined;
@@ -537,6 +606,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
         }
         if (!pid) {
           await api.updateTask(id, { status });
+          await refreshProjects();
           return;
         }
         const projectId = pid;
@@ -558,6 +628,9 @@ export function DataProvider({ children }: { children: ReactNode }) {
           }));
           throw e;
         }
+        // Keep outside the mutation catch: a read failure must not pretend the
+        // successful server-side status change was rolled back.
+        await refetchTasks(projectId);
       },
 
       setTaskAssignees: async (id, assigneeIds) => {
@@ -652,6 +725,8 @@ export function DataProvider({ children }: { children: ReactNode }) {
     reloadMembers,
     loadProject,
     refetchTasks,
+    refreshProjects,
+    applyProjectProgress,
   ]);
 
   return <DataContext value={value}>{children}</DataContext>;
@@ -673,9 +748,12 @@ export function useProjectProgress(projectId: string): number {
   const tasks = tasksOf(projectId);
   const stored = projects.find((p) => p.id === projectId)?.progress ?? 0;
   const loaded = isProjectLoaded(projectId);
+  // サブプロジェクトを持つ親は「サブ＋親直下タスク」の加重集計（後端算出）が正なので、
+  // 自分のタスクだけで再計算せず後端の値を使う
+  const isParent = projects.some((p) => p.parentId === projectId);
   return useMemo(
-    () => (loaded ? projectProgress(tasks, holidays) : stored),
-    [loaded, tasks, stored, holidays]
+    () => (loaded && !isParent ? projectProgress(tasks, holidays) : stored),
+    [loaded, isParent, tasks, stored, holidays]
   );
 }
 

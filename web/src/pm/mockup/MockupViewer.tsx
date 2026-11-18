@@ -1,6 +1,8 @@
 import {
   CloseOutlined,
   DeleteOutlined,
+  DoubleLeftOutlined,
+  DoubleRightOutlined,
   ExportOutlined,
   ShareAltOutlined,
   UploadOutlined,
@@ -44,8 +46,27 @@ interface Props {
   onChanged?: () => void;
 }
 
+/** 版パネルの折りたたみはビューアーごとの好み。保存できない環境（プライベートモード等）では毎回開いた状態 */
+const VERSIONS_COLLAPSED_KEY = 'pm.mockup.versionsCollapsed';
+
+function readVersionsCollapsed(): boolean {
+  try {
+    return window.localStorage.getItem(VERSIONS_COLLAPSED_KEY) === '1';
+  } catch {
+    return false;
+  }
+}
+
+function writeVersionsCollapsed(collapsed: boolean) {
+  try {
+    window.localStorage.setItem(VERSIONS_COLLAPSED_KEY, collapsed ? '1' : '0');
+  } catch {
+    // 保存できなくても開閉は効く
+  }
+}
+
 /**
- * 全画面プレビュー（M3）：サンドボックス iframe + 表示幅切替 + 右側の版リスト。
+ * 全画面プレビュー（M3）：サンドボックス iframe + 表示幅切替 + 右側の版リスト（折りたたみ可）。
  * 原文 URL は短期署名付き（view-url）を都度取得する。
  */
 export default function MockupViewer({ mockupId, onClose, onChanged }: Props) {
@@ -60,6 +81,23 @@ export default function MockupViewer({ mockupId, onClose, onChanged }: Props) {
   const [device, setDevice] = useState<Device>('desktop');
   const [shareOpen, setShareOpen] = useState(false);
   const [uploadOpen, setUploadOpen] = useState(false);
+  const [versionsCollapsed, setVersionsCollapsed] = useState(
+    readVersionsCollapsed,
+  );
+  const versionsToggleRef = useRef<HTMLButtonElement>(null);
+  const restoreVersionsFocus = useRef(false);
+  const toggleVersions = () => {
+    restoreVersionsFocus.current = true;
+    const next = !versionsCollapsed;
+    setVersionsCollapsed(next);
+    writeVersionsCollapsed(next);
+  };
+  useEffect(() => {
+    if (restoreVersionsFocus.current) {
+      versionsToggleRef.current?.focus();
+      restoreVersionsFocus.current = false;
+    }
+  }, [versionsCollapsed]);
 
   // onClose は呼び出し側で毎レンダー作り直されてもよいように ref 経由で使う
   const onCloseRef = useRef(onClose);
@@ -136,8 +174,9 @@ export default function MockupViewer({ mockupId, onClose, onChanged }: Props) {
       onCancel={onClose}
       footer={null}
       closable={false}
-      width="100vw"
-      style={{ top: 0, maxWidth: '100vw', paddingBottom: 0 }}
+      // 100vw はスクロールバー幅ぶんはみ出すため、サイズ・余白は rootClassName 側の CSS で固定する
+      rootClassName="pm-mockup-viewer-root"
+      width="100%"
       styles={{ container: { padding: 0, borderRadius: 0 } }}
       destroyOnClose
     >
@@ -155,6 +194,7 @@ export default function MockupViewer({ mockupId, onClose, onChanged }: Props) {
                 <Typography.Text
                   strong
                   className="pm-mockup-vtitle"
+                  ellipsis={{ tooltip: mockup.title }}
                   editable={{ onChange: rename, tooltip: t('common.edit') }}
                 >
                   {mockup.title}
@@ -203,7 +243,9 @@ export default function MockupViewer({ mockupId, onClose, onChanged }: Props) {
             </Button>
           </div>
         </div>
-        <div className="pm-mockup-vbody">
+        <div
+          className={`pm-mockup-vbody${versionsCollapsed ? ' is-collapsed' : ''}`}
+        >
           <div className="pm-mockup-stage">
             {url ? (
               <MockupFrame
@@ -216,62 +258,98 @@ export default function MockupViewer({ mockupId, onClose, onChanged }: Props) {
               <Spin />
             )}
           </div>
-          <aside className="pm-mockup-versions">
-            <div className="pm-mockup-versions-head">
-              {t('mockup.version.title')}
-            </div>
-            {versions.map((v) => (
-              <div
-                key={v.version}
-                className={`pm-mockup-ver${v.version === version ? ' is-on' : ''}`}
-              >
+          {versionsCollapsed ? (
+            <aside className="pm-mockup-versions-rail">
+              <Tooltip title={t('mockup.version.expand')} placement="left">
                 <button
+                  ref={versionsToggleRef}
                   type="button"
-                  className="pm-mockup-ver-main"
-                  onClick={() => setVersion(v.version)}
+                  className="pm-mockup-versions-rail-btn"
+                  aria-label={t('mockup.version.expand')}
+                  aria-expanded={false}
+                  onClick={toggleVersions}
                 >
-                  <span className="pm-mockup-ver-head">
-                    <b>v{v.version}</b>
-                    <span className="pm-mockup-sub">
-                      {formatWhen(v.createdAt)}
+                  <DoubleLeftOutlined />
+                  <span className="pm-mockup-versions-rail-label">
+                    {t('mockup.version.title')}
+                  </span>
+                  {versions.length > 0 && (
+                    <span className="pm-mockup-versions-rail-count">
+                      {versions.length}
                     </span>
-                  </span>
-                  {v.note && (
-                    <span className="pm-mockup-ver-note">{v.note}</span>
                   )}
-                  <span className="pm-mockup-sub">
-                    {publisherLabel(v.createdByName, v.via)} ·{' '}
-                    {formatSize(v.sizeBytes)}
-                    {v.fileCount > 1 &&
-                      ` · ${t('mockup.version.files', { n: v.fileCount })}`}
-                  </span>
                 </button>
-                {versions.length > 1 && (
-                  <Tooltip title={t('common.delete')}>
-                    <Button
-                      className="pm-mockup-ver-del"
-                      type="text"
-                      size="small"
-                      icon={<DeleteOutlined />}
-                      aria-label={t('common.delete')}
-                      onClick={() => removeVersion(v.version)}
-                    />
-                  </Tooltip>
-                )}
+              </Tooltip>
+            </aside>
+          ) : (
+            <aside className="pm-mockup-versions">
+              <div className="pm-mockup-versions-head">
+                <span>{t('mockup.version.title')}</span>
+                <Tooltip title={t('mockup.version.collapse')} placement="left">
+                  <Button
+                    ref={versionsToggleRef}
+                    type="text"
+                    size="small"
+                    icon={<DoubleRightOutlined />}
+                    aria-label={t('mockup.version.collapse')}
+                    aria-expanded
+                    onClick={toggleVersions}
+                  />
+                </Tooltip>
               </div>
-            ))}
-            {mockup && (
-              <div className="pm-mockup-sub">
-                {mockup.share.enabled
-                  ? mockup.share.pinnedVersion
-                    ? t('mockup.version.sharePinned', {
-                        v: mockup.share.pinnedVersion,
-                      })
-                    : t('mockup.version.shareLatest')
-                  : t('mockup.version.notShared')}
-              </div>
-            )}
-          </aside>
+              {versions.map((v) => (
+                <div
+                  key={v.version}
+                  className={`pm-mockup-ver${v.version === version ? ' is-on' : ''}`}
+                >
+                  <button
+                    type="button"
+                    className="pm-mockup-ver-main"
+                    onClick={() => setVersion(v.version)}
+                  >
+                    <span className="pm-mockup-ver-head">
+                      <b>v{v.version}</b>
+                      <span className="pm-mockup-sub">
+                        {formatWhen(v.createdAt)}
+                      </span>
+                    </span>
+                    {v.note && (
+                      <span className="pm-mockup-ver-note">{v.note}</span>
+                    )}
+                    <span className="pm-mockup-sub">
+                      {publisherLabel(v.createdByName, v.via)} ·{' '}
+                      {formatSize(v.sizeBytes)}
+                      {v.fileCount > 1 &&
+                        ` · ${t('mockup.version.files', { n: v.fileCount })}`}
+                    </span>
+                  </button>
+                  {versions.length > 1 && (
+                    <Tooltip title={t('common.delete')}>
+                      <Button
+                        className="pm-mockup-ver-del"
+                        type="text"
+                        size="small"
+                        icon={<DeleteOutlined />}
+                        aria-label={t('common.delete')}
+                        onClick={() => removeVersion(v.version)}
+                      />
+                    </Tooltip>
+                  )}
+                </div>
+              ))}
+              {mockup && (
+                <div className="pm-mockup-sub">
+                  {mockup.share.enabled
+                    ? mockup.share.pinnedVersion
+                      ? t('mockup.version.sharePinned', {
+                          v: mockup.share.pinnedVersion,
+                        })
+                      : t('mockup.version.shareLatest')
+                    : t('mockup.version.notShared')}
+                </div>
+              )}
+            </aside>
+          )}
         </div>
       </div>
       {mockup && shareOpen && (

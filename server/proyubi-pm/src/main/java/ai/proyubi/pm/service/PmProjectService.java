@@ -45,12 +45,14 @@ public class PmProjectService {
     private final TaskRollupService rollupService;
     private final PmHolidayService holidayService;
     private final PmSettingService settingService;
+    private final PmProjectProgressService progressService;
 
     public PmProjectService(PmProjectMapper projectMapper, PmTaskMapper taskMapper,
                             PmDependencyMapper dependencyMapper, PmCustomerService customerService,
                             PmTeamScopeService teamScope, PmCascadeService cascadeService,
                             TaskRollupService rollupService, PmHolidayService holidayService,
-                            PmSettingService settingService) {
+                            PmSettingService settingService, PmProjectProgressService progressService) {
+        this.progressService = progressService;
         this.projectMapper = projectMapper;
         this.taskMapper = taskMapper;
         this.dependencyMapper = dependencyMapper;
@@ -96,16 +98,40 @@ public class PmProjectService {
      * 这里用一条 {@code IN} 批量查回所有列出项目的任务（避免 N 次查询），逐项目实时汇总，
      * 仅在 live≠cached 时回写并同步改本次返回对象，使列表页打开即显示正确进度。
      * 回写不触碰 updated_at（订正而非用户编辑）。稳态下无漂移即零写入。
+     * <p>
+     * サブプロジェクト対応：まずサブを持たない案件（サブ自身を含む）を自分のタスクで集計し、
+     * そのあと親を「サブ（予定工数で加重）＋親直下タスク」の集計分岐
+     * （{@link TaskRollupService#parentProgress}）で求める。一覧に親だけ載ってサブが載っていない
+     * （status 絞り込み等）場合でも親の集計が正しくなるよう、サブを 1 クエリで補完して読む。
      */
     private void healProgress(UUID tenantId, List<PmProject> projects) {
         if (projects.isEmpty()) {
             return;
         }
-        List<UUID> ids = new ArrayList<>(projects.size());
+        Set<UUID> listedIds = new java.util.HashSet<>();
         for (PmProject p : projects) {
-            ids.add(p.getId());
+            listedIds.add(p.getId());
         }
-        List<PmTask> all = taskMapper.selectListByQuery(
+        // 一覧に載っていないサブ（親の集計に必要）を補完
+        List<PmProject> all = new ArrayList<>(projects);
+        for (PmProject c : projectMapper.selectListByQuery(
+            QueryWrapper.create()
+                .where(PmProject::getTenantId).eq(tenantId)
+                .and(PmProject::getParentId).in(listedIds)
+                .and(PmProject::getDeletedAt).isNull())) {
+            if (!listedIds.contains(c.getId())) {
+                all.add(c);
+            }
+        }
+        Map<UUID, List<PmProject>> childrenByParent = new HashMap<>();
+        List<UUID> ids = new ArrayList<>(all.size());
+        for (PmProject p : all) {
+            ids.add(p.getId());
+            if (p.getParentId() != null) {
+                childrenByParent.computeIfAbsent(p.getParentId(), k -> new ArrayList<>()).add(p);
+            }
+        }
+        List<PmTask> allTasks = taskMapper.selectListByQuery(
             QueryWrapper.create()
                 .where(PmTask::getTenantId).eq(tenantId)
                 .and(PmTask::getProjectId).in(ids)
@@ -113,30 +139,70 @@ public class PmProjectService {
                 .orderBy(PmTask::getOrder, true)
         );
         Map<UUID, List<PmTask>> byProject = new HashMap<>();
-        for (PmTask t : all) {
+        for (PmTask t : allTasks) {
             byProject.computeIfAbsent(t.getProjectId(), k -> new ArrayList<>()).add(t);
         }
+        // Read-only response metadata includes children even when only a parent is listed.
+        PmProjectActivityRules.populate(all, allTasks);
         Set<LocalDate> holidays = holidayService.getHolidayDates(tenantId);
         double hoursPerDay = settingService.getHoursPerWorkday(tenantId);
-        for (PmProject p : projects) {
-            List<PmTask> tasks = byProject.get(p.getId());
-            List<PmTask> list = tasks != null ? tasks : new ArrayList<>();
-            int live = rollupService.projectProgress(list, holidays, hoursPerDay);
-            int cached = p.getProgress() != null ? p.getProgress() : 0;
-            if (live != cached) {
-                UpdateChain.of(PmProject.class)
-                    .set(PmProject::getProgress, live)
-                    .where(PmProject::getId).eq(p.getId())
-                    .update();
-                p.setProgress(live);   // 同步本次响应，列表页立即显示订正值
+        Map<UUID, Integer> liveById = new HashMap<>();
+        // 1) サブを持たない案件（サブ自身を含む）
+        for (PmProject p : all) {
+            if (childrenByParent.containsKey(p.getId())) {
+                continue;
             }
-            // 総工期（予定/実績・分钟）：不落库、每次响应实时集计（甘特 footer 展示用）。
-            // 与 progress 同套 rollup 口径；tasks 已由上面一条 IN 批量查回，几乎零额外成本。
-            TaskRollupService.EffortTotals totals = rollupService.projectEffortTotals(list, holidays, hoursPerDay);
-            p.setPlannedTotalMinutes(totals.planned());
-            p.setActualTotalMinutes(totals.actual());
-            fillOpsCounts(p, list, holidays, hoursPerDay);
+            List<PmTask> list = byProject.getOrDefault(p.getId(), new ArrayList<>());
+            int live = rollupService.projectProgress(list, holidays, hoursPerDay);
+            liveById.put(p.getId(), live);
+            if (p.getParentId() != null) {
+                p.setRollupWeightMinutes(
+                    rollupService.subProjectWeight(p.getStart(), p.getEnd(), list, holidays, hoursPerDay));
+            }
+            if (listedIds.contains(p.getId())) {
+                healOne(p, live);
+                fillTotals(p, list, holidays, hoursPerDay);
+            }
         }
+        // 2) 親：サブの重み × 進捗 ＋ 親直下タスク
+        for (PmProject p : projects) {
+            List<PmProject> children = childrenByParent.get(p.getId());
+            if (children == null) {
+                continue;
+            }
+            List<TaskRollupService.WeightedProgress> subs = new ArrayList<>(children.size());
+            for (PmProject c : children) {
+                long weight = c.getRollupWeightMinutes() != null ? c.getRollupWeightMinutes() : 0L;
+                subs.add(new TaskRollupService.WeightedProgress(weight, liveById.getOrDefault(c.getId(), 0)));
+            }
+            List<PmTask> own = byProject.getOrDefault(p.getId(), new ArrayList<>());
+            int live = rollupService.parentProgress(own, subs, holidays, hoursPerDay);
+            healOne(p, live);
+            fillTotals(p, own, holidays, hoursPerDay);
+        }
+    }
+
+    /** live≠cached のときだけ回写し、本次响应にも反映（updated_at は触らない）。 */
+    private void healOne(PmProject p, int live) {
+        int cached = p.getProgress() != null ? p.getProgress() : 0;
+        if (live != cached) {
+            UpdateChain.of(PmProject.class)
+                .set(PmProject::getProgress, live)
+                .where(PmProject::getId).eq(p.getId())
+                .update();
+            p.setProgress(live);   // 同步本次响应，列表页立即显示订正值
+        }
+    }
+
+    /**
+     * 総工期（予定/実績・分钟）：不落库、每次响应实时集计（甘特 footer 展示用）。
+     * 与 progress 同套 rollup 口径；tasks 已由一条 IN 批量查回，几乎零额外成本。親は自分直下のタスクのみ。
+     */
+    private void fillTotals(PmProject p, List<PmTask> list, Set<LocalDate> holidays, double hoursPerDay) {
+        TaskRollupService.EffortTotals totals = rollupService.projectEffortTotals(list, holidays, hoursPerDay);
+        p.setPlannedTotalMinutes(totals.planned());
+        p.setActualTotalMinutes(totals.actual());
+        fillOpsCounts(p, list, holidays, hoursPerDay);
     }
 
     /**
@@ -204,19 +270,40 @@ public class PmProjectService {
         return project;
     }
 
+    /**
+     * 新規作成。{@code parentId} 指定時はサブプロジェクトとして作る：
+     * 親の検証（{@link PmProjectHierarchyRules#validateParent}）のうえ、customerId / teamId は親で上書き、
+     * kind は親（＝project）を継承。並び順は同じ親のサブの末尾。作成後に親の進捗を再計算する。
+     */
     @Transactional
     public PmProject create(UUID tenantId, UUID customerId, String name, String description,
                             String status, String kind, LocalDate start, LocalDate end,
-                            Integer monthlyQuotaMinutes) {
+                            Integer monthlyQuotaMinutes, UUID parentId) {
+        PmProject parent = null;
+        if (parentId != null) {
+            parent = projectMapper.selectOneById(parentId);
+            PmProjectHierarchyRules.validateParent(null, false,
+                kind == null || kind.isBlank() ? null : normalizeKind(kind), tenantId, parent);
+            teamScope.assertTeamVisible(parent.getTeamId());
+            customerId = parent.getCustomerId();   // サブの顧客は親に揃える（サーバー側で上書き）
+        }
+        if (customerId == null) {
+            throw BizException.of(400, "顧客 / 製品を指定してください");
+        }
         PmCustomer customer = customerService.getByIdAndTenant(customerId, tenantId); // 校验客户归属 + 团队可见
         String normalizedStatus = normalizeStatus(status);
-        String normalizedKind = normalizeKind(kind);
-        validateRange(normalizedKind, start, end);
+        String normalizedKind = parent != null ? KIND_PROJECT : normalizeKind(kind);
+        if (start == null) {
+            start = LocalDate.now();   // 開始日の省略＝作成当日（start_date は not null）
+        }
+        validateRange(start, end);
         PmProject project = new PmProject();
         project.setId(UUID.randomUUID());
         project.setTenantId(tenantId);
         project.setCustomerId(customerId);
-        project.setTeamId(customer.getTeamId());   // 项目团队从所属客户继承
+        project.setParentId(parentId);
+        // 项目团队从所属客户继承（サブは親の team に揃える）
+        project.setTeamId(parent != null ? parent.getTeamId() : customer.getTeamId());
         project.setName(name);
         project.setDescription(description);
         project.setStatus(normalizedStatus);
@@ -225,32 +312,89 @@ public class PmProjectService {
         project.setEnd(end);
         project.setMonthlyQuotaMinutes(normalizeQuota(monthlyQuotaMinutes));
         project.setProgress(0);
-        // 新项目排到该客户最前（min - 1），与原「新建置顶」体验一致；无项目时为 0
-        project.setSortOrder(minSortOrder(tenantId, customerId) - 1);
+        // 新项目排到该客户最前（min - 1），与原「新建置顶」体验一致；无项目时为 0。
+        // サブは同じ親のサブの末尾（フェーズ順に足していく使い方が自然なため）。
+        project.setSortOrder(parentId != null
+            ? maxChildSortOrder(tenantId, parentId) + 1
+            : minSortOrder(tenantId, customerId) - 1);
         project.setCreatedAt(LocalDateTime.now());
         project.setUpdatedAt(LocalDateTime.now());
         projectMapper.insert(project);
+        if (parentId != null) {
+            progressService.recomputeParent(tenantId, parentId);   // サブが増えると親の重みが変わる
+        }
         return project;
     }
 
     /**
      * 部分更新。{@code clearEnd=true} で終了日を明示的に null（＝継続中）へ戻す
      * ——PATCH セマンティクスでは {@code end=null} は「未変更」と区別できないため。
+     * <p>
+     * 親の付け替え：{@code parentId} 指定でその親のサブへ（同じ顧客内のみ）、{@code clearParent=true} で
+     * トップレベルへ戻す。サブの customerId / teamId は親で上書き、サブを持つ親が顧客を変えたらサブも追従。
+     * 付け替え・期間変更の後は旧親/新親の進捗を再計算する。
      */
     @Transactional
     public PmProject update(UUID id, UUID tenantId, UUID customerId, String name, String description,
                             String status, String kind, LocalDate start, LocalDate end, boolean clearEnd,
-                            Integer monthlyQuotaMinutes) {
+                            Integer monthlyQuotaMinutes, UUID parentId, boolean clearParent) {
         PmProject project = getByIdAndTenant(id, tenantId);
-        if (customerId != null) {
+        UUID oldParentId = project.getParentId();
+        UUID oldCustomerId = project.getCustomerId();
+        UUID oldTeamId = project.getTeamId();
+        boolean hasChildren = oldParentId == null && progressService.childCount(tenantId, id) > 0;
+        String newKind = kind != null ? normalizeKind(kind) : currentKind(project);
+
+        // 1) 親の付け替え
+        PmProject parent = null;
+        boolean parentChanged = false;
+        if (clearParent) {
+            if (oldParentId != null) {
+                project.setParentId(null);
+                parentChanged = true;
+            }
+        } else if (parentId != null && !parentId.equals(oldParentId)) {
+            parent = projectMapper.selectOneById(parentId);
+            PmProjectHierarchyRules.validateParent(id, hasChildren, newKind, tenantId, parent);
+            teamScope.assertTeamVisible(parent.getTeamId());
+            PmProjectHierarchyRules.validateSameCustomer(project.getCustomerId(), parent);
+            project.setParentId(parentId);
+            parentChanged = true;
+        } else if (oldParentId != null) {
+            parent = projectMapper.selectOneById(oldParentId);
+            PmProjectHierarchyRules.validateParent(id, hasChildren, newKind, tenantId, parent);
+            teamScope.assertTeamVisible(parent.getTeamId());
+        }
+
+        // 2) 顧客 / 团队：サブは親に揃える。トップレベルは従来どおり
+        if (project.getParentId() != null && parent != null) {
+            if (customerId != null && !customerId.equals(parent.getCustomerId())) {
+                throw BizException.of(400,
+                    "サブプロジェクトの顧客 / 製品は親プロジェクトと同じです。変更する場合は先に親プロジェクトから外してください");
+            }
+            project.setCustomerId(parent.getCustomerId());
+            project.setTeamId(parent.getTeamId());
+        } else if (customerId != null) {
             PmCustomer customer = customerService.getByIdAndTenant(customerId, tenantId);
             project.setCustomerId(customerId);
             project.setTeamId(customer.getTeamId());   // 换客户时同步团队归属
         }
+
+        // 3) kind：サブは ops 不可、サブを持つ親も ops 不可（v1）
+        if (project.getParentId() != null && KIND_OPS.equals(newKind)) {
+            throw BizException.of(400, "サブプロジェクトを運用・保守にはできません");
+        }
+        PmProjectHierarchyRules.validateKindChangeForParent(hasChildren, newKind);
+
+        if (parentChanged) {
+            project.setSortOrder(project.getParentId() != null
+                ? maxChildSortOrder(tenantId, project.getParentId()) + 1
+                : minSortOrder(tenantId, project.getCustomerId()) - 1);
+        }
         if (name != null) project.setName(name);
         if (description != null) project.setDescription(description);
         if (status != null) project.setStatus(normalizeStatus(status));
-        if (kind != null) project.setKind(normalizeKind(kind));
+        if (kind != null) project.setKind(newKind);
         if (start != null) project.setStart(start);
         if (clearEnd) {
             project.setEnd(null);
@@ -263,20 +407,45 @@ public class PmProjectService {
             clearQuota = quota == null;   // 0 以下＝枠なしへ戻す
             project.setMonthlyQuotaMinutes(quota);
         }
-        validateRange(currentKind(project), project.getStart(), project.getEnd());
+        validateRange(project.getStart(), project.getEnd());
         project.setUpdatedAt(LocalDateTime.now());
-        // 既定は「非 null 列だけ更新」。null を書きに行く必要があるとき（終了日/工数枠のクリア）だけ
+        // 既定は「非 null 列だけ更新」。null を書きに行く必要があるとき（終了日/工数枠/親のクリア）だけ
         // ignoreNulls を外す（entity は selectOneById で全列ロード済みなので他列は元値のまま書き戻る）
-        projectMapper.update(project, !(clearEnd || clearQuota));
+        boolean clearedParent = parentChanged && project.getParentId() == null;
+        boolean clearedTeam = oldTeamId != null && project.getTeamId() == null;
+        projectMapper.update(project, !(clearEnd || clearQuota || clearedParent || clearedTeam));
+
+        // サブを持つ親が顧客を変えたら、サブの customer / team も追従（サブは常に親と同じ顧客）
+        if (hasChildren && !project.getCustomerId().equals(oldCustomerId)) {
+            UpdateChain.of(PmProject.class)
+                .set(PmProject::getCustomerId, project.getCustomerId())
+                .set(PmProject::getTeamId, project.getTeamId())
+                .where(PmProject::getTenantId).eq(tenantId)
+                .and(PmProject::getParentId).eq(id)
+                .and(PmProject::getDeletedAt).isNull()
+                .update();
+        }
+        // 親の集計：付け替えなら旧親/新親、サブの期間変更なら（タスク無しサブの重みが変わるので）現親
+        if (oldParentId != null && !oldParentId.equals(project.getParentId())) {
+            progressService.recomputeParent(tenantId, oldParentId);
+        }
+        if (project.getParentId() != null) {
+            progressService.recomputeParent(tenantId, project.getParentId());
+        }
+        if (clearedParent || hasChildren) {
+            // トップレベルに戻した案件は自分のタスクだけの値に、親は集計値に（期間変更は親自身には影響しないが念のため）
+            progressService.recompute(tenantId, id);
+        }
         return project;
     }
 
     /**
-     * 拖动排序：按给定顺序重写同一客户下项目的 sort_order（0..n-1）。
-     * 仅处理传入且属于该租户的有效项目；非法/越权 id 静默跳过。
+     * 拖动排序：按给定顺序重写同一阶层内项目的 sort_order（0..n-1）。
+     * {@code parentId=null} ＝该客户的トップレベル同士、指定時＝その親のサブ同士。
+     * 階層をまたぐ ID（トップレベルの並べ替えに混ざったサブ等）・非法/越权 id 静默跳过。
      */
     @Transactional
-    public void reorder(UUID tenantId, UUID customerId, List<UUID> orderedIds) {
+    public void reorder(UUID tenantId, UUID customerId, List<UUID> orderedIds, UUID parentId) {
         if (orderedIds == null || orderedIds.isEmpty()) {
             return;
         }
@@ -287,7 +456,8 @@ public class PmProjectService {
             PmProject project = projectMapper.selectOneById(id);
             if (project == null || project.getDeletedAt() != null
                 || !tenantId.equals(project.getTenantId())
-                || !customerId.equals(project.getCustomerId())) {
+                || !customerId.equals(project.getCustomerId())
+                || !PmProjectHierarchyRules.sameLevel(project, parentId)) {
                 continue;
             }
             project.setSortOrder(order++);
@@ -296,12 +466,13 @@ public class PmProjectService {
         }
     }
 
-    /** 该客户下现有项目的最小 sort_order（无项目返回 0，NULL 视为 0）。 */
+    /** 该客户下现有トップレベル项目的最小 sort_order（无项目返回 0，NULL 视为 0）。 */
     private int minSortOrder(UUID tenantId, UUID customerId) {
         List<PmProject> existing = projectMapper.selectListByQuery(
             QueryWrapper.create()
                 .where(PmProject::getTenantId).eq(tenantId)
                 .and(PmProject::getCustomerId).eq(customerId)
+                .and(PmProject::getParentId).isNull()
                 .and(PmProject::getDeletedAt).isNull()
         );
         int min = 0;
@@ -314,10 +485,23 @@ public class PmProjectService {
         return min;
     }
 
-    /** 删除项目（连带软删除其任务与依赖） */
+    /** 同じ親のサブの最大 sort_order（サブが無ければ -1 → 先頭は 0）。 */
+    private int maxChildSortOrder(UUID tenantId, UUID parentId) {
+        int max = -1;
+        for (PmProject p : progressService.children(tenantId, parentId)) {
+            int so = p.getSortOrder() != null ? p.getSortOrder() : 0;
+            if (so > max) {
+                max = so;
+            }
+        }
+        return max;
+    }
+
+    /** 删除项目（连带软删除其任务与依赖）。サブ（未削除）を持つ親は削除不可。 */
     @Transactional
     public void delete(UUID id, UUID tenantId) {
         PmProject project = getByIdAndTenant(id, tenantId);
+        PmProjectHierarchyRules.validateDeletable(progressService.childCount(tenantId, id));
         LocalDateTime now = LocalDateTime.now();
 
         List<PmTask> tasks = taskMapper.selectListByQuery(
@@ -352,6 +536,9 @@ public class PmProjectService {
         project.setDeletedAt(now);
         project.setUpdatedAt(now);
         projectMapper.update(project);
+        if (project.getParentId() != null) {
+            progressService.recomputeParent(tenantId, project.getParentId());   // サブが減ると親の集計が変わる
+        }
     }
 
     private String normalizeStatus(String status) {
@@ -386,13 +573,10 @@ public class PmProjectService {
     }
 
     /**
-     * 期間の妥当性：ops 型のみ終了日 null（＝継続中）を許す。
-     * 両端が揃っている場合は前後関係も見る。
+     * 期間の妥当性：終了日は種別を問わず任意（null＝期限なし。期限超過の判定もしない）。
+     * 両端が揃っている場合は前後関係だけを見る。
      */
-    private void validateRange(String kind, LocalDate start, LocalDate end) {
-        if (end == null && !KIND_OPS.equals(kind)) {
-            throw BizException.of(400, "通常项目必须设置结束日期");
-        }
+    private void validateRange(LocalDate start, LocalDate end) {
         if (start != null && end != null && end.isBefore(start)) {
             throw BizException.of(400, "结束日期不能早于开始日期");
         }

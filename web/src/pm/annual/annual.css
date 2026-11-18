@@ -131,6 +131,23 @@
   color: #8c8c8c;
   white-space: nowrap;
 }
+/* サブプロジェクト：親の直後に字下げして並べる */
+.an-label.is-sub {
+  padding-left: 32px;
+  background: #fbfcfe;
+}
+.an-label.is-sub .an-ver {
+  font-weight: 400;
+}
+.an-sub-tag {
+  flex: 0 0 auto;
+  padding: 0 4px;
+  border: 1px solid #e5e8ee;
+  border-radius: 3px;
+  color: #8c94a3;
+  font-size: 11px;
+  line-height: 16px;
+}
 
 /* ===== 轨道 + 色块 ===== */
 .an-track {

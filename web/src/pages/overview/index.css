@@ -193,6 +193,22 @@
   text-overflow: ellipsis;
   white-space: nowrap;
 }
+/* 親案件の「サブ N」ピル（名前の直後に寄せ、遅延タグは右端のまま） */
+.ov-hsub {
+  flex: none;
+  margin-right: auto;
+  padding: 0 6px;
+  border-radius: 9px;
+  background: #e8f0ff;
+  color: #2f6bff;
+  font-size: 11px;
+  line-height: 18px;
+  white-space: nowrap;
+}
+.ov-hsub.is-red {
+  background: #fff1f0;
+  color: #cf1322;
+}
 .ov-hrow .ant-progress {
   margin: 0;
 }
